@@ -69,8 +69,10 @@ int main(int argc, char** argv)
 
         int bvhDebugLevel = 0;
         int bvhDebugLeaf = 0;
+        int normalDebugLevel = 0;
         bool debugBVHLevel { false };
         bool debugBVHLeaf { false };
+        bool debugNormals { false };
         ViewMode viewMode { ViewMode::Rasterization };
 
         window.registerKeyCallback([&](int key, int /* scancode */, int action, int /* mods */) {
@@ -198,6 +200,9 @@ int main(int argc, char** argv)
                 ImGui::Checkbox("Draw BVH Leaf", &debugBVHLeaf);
                 if (debugBVHLeaf)
                     ImGui::SliderInt("BVH Leaf", &bvhDebugLeaf, 1, bvh.numLeaves());
+                ImGui::Checkbox("Draw normals", &debugNormals);
+                if (debugNormals)
+                    ImGui::SliderInt("Normal interpolation level", &normalDebugLevel, 0, 2);
             }
 
             ImGui::Spacing();
@@ -325,6 +330,13 @@ int main(int argc, char** argv)
                     glDisable(GL_LIGHTING);
                     glDepthFunc(GL_LEQUAL);
                     (void)getFinalColor(scene, bvh, *optDebugRay, config.features);
+                    enableDebugDraw = false;
+                }
+                if (debugNormals) {
+                    enableDebugDraw = true;
+                    glDisable(GL_LIGHTING);
+                    glDepthFunc(GL_LEQUAL);
+                    drawNormals(scene, normalDebugLevel);
                     enableDebugDraw = false;
                 }
                 glPopAttrib();
