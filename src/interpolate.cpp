@@ -3,14 +3,19 @@
 
 glm::vec3 computeBarycentricCoord (const glm::vec3& v0, const glm::vec3& v1, const glm::vec3& v2, const glm::vec3& p)
 {
-    // TODO: implement this function.
-    return glm::vec3(0.0);
+    float area = glm::length(glm::cross(v1 - v0, v2 - v0)) / 2;
+    glm::vec3 coords = glm::vec3(
+        glm::length(glm::cross(v0 - p, v1 - p)) / (2 * area),
+        glm::length(glm::cross(v0 - p, v2 - p)) / (2 * area),
+        0);
+    coords.z = 1 - coords.x - coords.y;
+
+    return coords;
 }
 
 glm::vec3 interpolateNormal (const glm::vec3& n0, const glm::vec3& n1, const glm::vec3& n2, const glm::vec3 barycentricCoord)
 {
-    // TODO: implement this function.
-    return glm::vec3(0.0);
+    return barycentricCoord.x * n0 + barycentricCoord.y * n1 + barycentricCoord * n2;
 }
 
 glm::vec2 interpolateTexCoord (const glm::vec2& t0, const glm::vec2& t1, const glm::vec2& t2, const glm::vec3 barycentricCoord)
