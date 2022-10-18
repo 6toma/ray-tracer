@@ -5,8 +5,8 @@
 
 const glm::vec3 computeShading(const glm::vec3& lightPosition, const glm::vec3& lightColor, const Features& features, Ray ray, HitInfo hitInfo)
 {
-    if (!features.enableShading) // flag : "enableShading: when disabled the material diffuse color (kd) will be used during rendering."
-        return hitInfo.material.kd;
+    //if (!features.enableShading) // flag : "enableShading: when disabled the material diffuse color (kd) will be used during rendering."
+    //    return hitInfo.material.kd;
    
     glm::vec3 pointOnPlane = ray.origin + ray.t * ray.direction;
     glm::vec3 pointToLight = glm::normalize(lightPosition - pointOnPlane);
