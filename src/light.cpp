@@ -71,9 +71,34 @@ glm::vec3 computeLightContribution(const Scene& scene, const BvhInterface& bvh, 
 {
     if (features.enableShading) {
         // If shading is enabled, compute the contribution from all lights.
-
         // TODO: replace this by your own implementation of shading
-        return hitInfo.material.kd;
+        glm::vec3 shading = { 0, 0, 0 };
+        float numberOfLights = 0;
+
+        for (const auto& light : scene.lights) {
+            numberOfLights++;
+            if (std::holds_alternative<PointLight>(light)) {
+
+                const PointLight pointLight = std::get<PointLight>(light);
+                shading += computeShading(pointLight.position, pointLight.color, features, ray, hitInfo);
+
+            } else if (std::holds_alternative<SegmentLight>(light)) {
+
+                const SegmentLight segmentLight = std::get<SegmentLight>(light);
+                glm::vec3 lightPosition, lightColor;
+                sampleSegmentLight(segmentLight, lightPosition, lightColor);
+                shading += computeShading(lightPosition, lightColor, features, ray, hitInfo);
+
+            } else if (std::holds_alternative<ParallelogramLight>(light)) {
+
+                const ParallelogramLight parallelogramLight = std::get<ParallelogramLight>(light);
+                glm::vec3 lightPosition, lightColor;
+                sampleParallelogramLight(parallelogramLight, lightPosition, lightColor);
+                shading += computeShading(lightPosition, lightColor, features, ray, hitInfo);
+
+            }
+        }
+        return shading / numberOfLights;
 
     } else {
         // If shading is disabled, return the albedo of the material.
