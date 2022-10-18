@@ -1,4 +1,5 @@
 #include "draw.h"
+#include "interpolate.h"
 #include <framework/opengl_includes.h>
 // Suppress warnings in third-party code.
 #include <framework/disable_all_warnings.h>
@@ -197,4 +198,81 @@ void drawRay(const Ray& ray, const glm::vec3& color)
         drawSphere(hitPoint, 0.005f, color);
 
     glPopAttrib();
+}
+
+void drawNormals(const Scene& scene, int interpolationLevel)
+{
+    for (const auto& mesh : scene.meshes) {
+        if (!enableDebugDraw)
+            return;
+
+        glPushAttrib(GL_ALL_ATTRIB_BITS);
+        glDisable(GL_LIGHTING);
+        glBegin(GL_LINES);
+        for (const auto& triangleIndex : mesh.triangles) {
+            glm::vec3 normals[3] {};
+            for (int i = 0; i < 3; i++) {
+                const auto& vertex = mesh.vertices[triangleIndex[i]];
+                glColor3fv(glm::value_ptr(glm::abs(vertex.normal)));
+                glVertex3fv(glm::value_ptr(vertex.position));
+                glVertex3fv(glm::value_ptr(vertex.position + vertex.normal / glm::vec3(10)));
+
+                normals[i] = vertex.normal;
+            }
+
+            // this is dumb but i dont have the mental capacity to do it better now
+            // lets say its optimization because loop unrolling lol
+            if (interpolationLevel == 1) {
+                glm::vec3 interNormal = interpolateNormal(normals[0], normals[1], normals[2], glm::vec3(1.0 / 3.0));
+                glm::vec3 interPos = (mesh.vertices[triangleIndex[0]].position + mesh.vertices[triangleIndex[1]].position + mesh.vertices[triangleIndex[2]].position) / glm::vec3(3);
+                glColor3fv(glm::value_ptr(glm::abs(interNormal)));
+                glVertex3fv(glm::value_ptr(interPos));
+                glVertex3fv(glm::value_ptr(interPos + interNormal / glm::vec3(10)));
+            } else if (interpolationLevel == 2) {
+                glm::vec3 interNormal = interpolateNormal(normals[0], normals[1], normals[2], glm::vec3(3.0 / 5.0, 1.0 / 5.0, 1.0 / 5.0));
+                glm::vec3 interPos = (mesh.vertices[triangleIndex[0]].position * glm::vec3(3.0 / 5.0))
+                    + (mesh.vertices[triangleIndex[1]].position + mesh.vertices[triangleIndex[2]].position) * glm::vec3(1.0 / 5.0);
+                glColor3fv(glm::value_ptr(glm::abs(interNormal)));
+                glVertex3fv(glm::value_ptr(interPos));
+                glVertex3fv(glm::value_ptr(interPos + interNormal / glm::vec3(10)));
+
+                interNormal = interpolateNormal(normals[0], normals[1], normals[2], glm::vec3(1.0 / 5.0, 3.0 / 5.0, 1.0 / 5.0));
+                interPos = (mesh.vertices[triangleIndex[1]].position * glm::vec3(3.0 / 5.0))
+                    + (mesh.vertices[triangleIndex[0]].position + mesh.vertices[triangleIndex[2]].position) * glm::vec3(1.0 / 5.0);
+                glColor3fv(glm::value_ptr(glm::abs(interNormal)));
+                glVertex3fv(glm::value_ptr(interPos));
+                glVertex3fv(glm::value_ptr(interPos + interNormal / glm::vec3(10)));
+
+                interNormal = interpolateNormal(normals[0], normals[1], normals[2], glm::vec3(1.0 / 5.0, 1.0 / 5.0, 3.0 / 5.0));
+                interPos = (mesh.vertices[triangleIndex[2]].position * glm::vec3(3.0 / 5.0))
+                    + (mesh.vertices[triangleIndex[1]].position + mesh.vertices[triangleIndex[0]].position) * glm::vec3(1.0 / 5.0);
+                glColor3fv(glm::value_ptr(glm::abs(interNormal)));
+                glVertex3fv(glm::value_ptr(interPos));
+                glVertex3fv(glm::value_ptr(interPos + interNormal / glm::vec3(10)));
+
+                interNormal = interpolateNormal(normals[0], normals[1], normals[2], glm::vec3(2.0 / 5.0, 2.0 / 5.0, 1.0 / 5.0));
+                interPos = (mesh.vertices[triangleIndex[2]].position * glm::vec3(1.0 / 5.0))
+                    + (mesh.vertices[triangleIndex[1]].position + mesh.vertices[triangleIndex[0]].position) * glm::vec3(2.0 / 5.0);
+                glColor3fv(glm::value_ptr(glm::abs(interNormal)));
+                glVertex3fv(glm::value_ptr(interPos));
+                glVertex3fv(glm::value_ptr(interPos + interNormal / glm::vec3(10)));
+
+                interNormal = interpolateNormal(normals[0], normals[1], normals[2], glm::vec3(2.0 / 5.0, 1.0 / 5.0, 2.0 / 5.0));
+                interPos = (mesh.vertices[triangleIndex[1]].position * glm::vec3(1.0 / 5.0))
+                    + (mesh.vertices[triangleIndex[0]].position + mesh.vertices[triangleIndex[2]].position) * glm::vec3(2.0 / 5.0);
+                glColor3fv(glm::value_ptr(glm::abs(interNormal)));
+                glVertex3fv(glm::value_ptr(interPos));
+                glVertex3fv(glm::value_ptr(interPos + interNormal / glm::vec3(10)));
+
+                interNormal = interpolateNormal(normals[0], normals[1], normals[2], glm::vec3(1.0 / 5.0, 2.0 / 5.0, 2.0 / 5.0));
+                interPos = (mesh.vertices[triangleIndex[0]].position * glm::vec3(1.0 / 5.0))
+                    + (mesh.vertices[triangleIndex[1]].position + mesh.vertices[triangleIndex[2]].position) * glm::vec3(2.0 / 5.0);
+                glColor3fv(glm::value_ptr(glm::abs(interNormal)));
+                glVertex3fv(glm::value_ptr(interPos));
+                glVertex3fv(glm::value_ptr(interPos + interNormal / glm::vec3(10)));
+            }
+        }
+        glEnd();
+        glPopAttrib();
+    }
 }
