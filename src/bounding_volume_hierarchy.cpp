@@ -30,8 +30,8 @@ int treeConstruction(std::vector<Node>& t, Scene* pScene,std::vector<glm::vec4>&
         return -1;
     Node node;
     node.traingleIndex = traingleIndex;
-    node.boundary.lower = glm::vec3 { INT_MAX };
-    node.boundary.upper = glm::vec3 { INT_MIN };
+    node.boundary.lower = glm::vec3 { 1e9 };
+    node.boundary.upper = glm::vec3 { -1e9 };
     for (auto t : traingleIndex) {
         Vertex v1 = pScene->meshes[t[0]].vertices[t[1]];
         Vertex v2 = pScene->meshes[t[0]].vertices[t[2]];
@@ -88,7 +88,6 @@ BoundingVolumeHierarchy::BoundingVolumeHierarchy(Scene* pScene)
         ind++;
     }
     treeConstruction(tree, pScene,traingleIndex,0);
-    // TODO: implement BVH construction.
 }
 
 // Return the depth of the tree that you constructed. This is used to tell the
