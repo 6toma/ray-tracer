@@ -6,10 +6,88 @@
 #include "interpolate.h"
 #include <glm/glm.hpp>
 
+struct Node {
+    std::vector<glm::vec4> traingleIndex;
+    int depth;
+    bool isleaf;
+    std::vector<int> children;
+    AxisAlignedBox boundary;
+    /*
+    Node(std::vector<glm::vec4>& index) {
+        traingleIndex = index;
+        boundary.lower = glm::vec3{ INT_MAX };
+        boundary.upper = glm::vec3 { INT_MIN };
+        for (auto t : traingleIndex) {
+            Vertex v1 = pScene->meshes[x[0]].vertices[x[1]];
+            Vertex v2 = pScene->meshes[x[0]].vertices[x[2]];
+            Vertex v3 = pScene->meshes[x[0]].vertices[x[3]];
+        }
+    }*/
+};
+std::vector<Node> tree;
+int treeConstruction(std::vector<Node>& t, Scene* pScene,std::vector<glm::vec4>& traingleIndex,int depth, int maxdepth = 20){
+    if (depth > maxdepth||traingleIndex.empty())
+        return -1;
+    Node node;
+    node.traingleIndex = traingleIndex;
+    node.boundary.lower = glm::vec3 { INT_MAX };
+    node.boundary.upper = glm::vec3 { INT_MIN };
+    for (auto t : traingleIndex) {
+        Vertex v1 = pScene->meshes[t[0]].vertices[t[1]];
+        Vertex v2 = pScene->meshes[t[0]].vertices[t[2]];
+        Vertex v3 = pScene->meshes[t[0]].vertices[t[3]];
+        for (int i = 0; i < 3; i++) {
+            node.boundary.lower[i] = std::min(std::min(node.boundary.lower[i], v1.position[i]), std::min(v2.position[i], v3.position[i]));
+            node.boundary.upper[i] = std::max(std::max(node.boundary.upper[i], v1.position[i]), std::max(v2.position[i], v3.position[i]));
+        }
+    }
+    node.depth = depth;
+    node.isleaf = false;
+    t.push_back(node);
+    int res = t.size() - 1;
+    if (traingleIndex.size() == 1) {
+        node.isleaf = true;
+        return res;
+    }
+    int median = traingleIndex.size() / 2;//median to the right child
 
+    int axis = depth % 3 + 1;
+    std::sort(
+        traingleIndex.begin(),
+        traingleIndex.end(),
+        [&](const auto& x, const auto& y) {
+            Vertex v1 = pScene->meshes[x[0]].vertices[x[1]];
+            Vertex v2 = pScene->meshes[x[0]].vertices[x[2]];
+            Vertex v3 = pScene->meshes[x[0]].vertices[x[3]];
+            Vertex v4 = pScene->meshes[y[0]].vertices[y[1]];
+            Vertex v5 = pScene->meshes[y[0]].vertices[y[2]];
+            Vertex v6 = pScene->meshes[y[0]].vertices[y[3]];
+            return v1.position[axis] + v2.position[axis] + v3.position[axis] < v4.position[axis] + v5.position[axis] + v6.position[axis];
+        });
+    std::vector<glm::vec4> leftcontent = { traingleIndex.begin(), traingleIndex.end() - median };
+    if (traingleIndex.size() % 2)
+        median++;
+    std::vector<glm::vec4> rightcontent = { traingleIndex.begin() + median, traingleIndex.end() };
+    node.children.push_back(treeConstruction(t, pScene, leftcontent, depth+1));
+    node.children.push_back(treeConstruction(t, pScene, rightcontent, depth + 1));
+    if (node.children[0] == -1 && node.children[1] == -1) {
+        node.isleaf = true;
+    }
+    return res;
+}
 BoundingVolumeHierarchy::BoundingVolumeHierarchy(Scene* pScene)
     : m_pScene(pScene)
 {
+    tree.clear();
+    std::vector<glm::vec4> traingleIndex;
+    int ind = 0;
+    for (auto m : pScene->meshes) {
+        for (auto v : m.triangles) {
+            traingleIndex.push_back(glm::vec4 { ind, v.x, v.y, v.z });
+        }
+        ind++;
+    }
+    treeConstruction(tree, pScene,traingleIndex,0);
     // TODO: implement BVH construction.
 }
 
@@ -17,14 +95,23 @@ BoundingVolumeHierarchy::BoundingVolumeHierarchy(Scene* pScene)
 // slider in the UI how many steps it should display for Visual Debug 1.
 int BoundingVolumeHierarchy::numLevels() const
 {
-    return 1;
+    int ans = 0;
+    for (Node node : tree) {
+        ans = std::max(ans, node.depth);
+    }
+    return ans+1;
 }
 
 // Return the number of leaf nodes in the tree that you constructed. This is used to tell the
 // slider in the UI how many steps it should display for Visual Debug 2.
 int BoundingVolumeHierarchy::numLeaves() const
 {
-    return 1;
+    int ans = 0;
+    for (Node node : tree) {
+        if (node.isleaf)
+            ans++;
+    }
+    return ans;
 }
 
 // Use this function to visualize your BVH. This is useful for debugging. Use the functions in
