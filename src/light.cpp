@@ -7,7 +7,6 @@ DISABLE_WARNINGS_PUSH()
 DISABLE_WARNINGS_POP()
 #include <cmath>
 
-
 // samples a segment light source
 // you should fill in the vectors position and color with the sampled position and color
 void sampleSegmentLight(const SegmentLight& segmentLight, glm::vec3& position, glm::vec3& color)
@@ -28,9 +27,14 @@ void sampleParallelogramLight(const ParallelogramLight& parallelogramLight, glm:
 
 // test the visibility at a given light sample
 // returns 1.0 if sample is visible, 0.0 otherwise
-float testVisibilityLightSample(const glm::vec3& samplePos, const glm::vec3& debugColor, const BvhInterface& bvh, const Features& features, Ray ray, HitInfo hitInfo)
+float testVisibilityLightSample(const glm::vec3& samplePos, const glm::vec3& debugColor, const BvhInterface& bvh,
+    const Features& features, Ray ray, HitInfo hitInfo)
 {
-    // TODO: implement this function.
+    glm::vec3 pos = ray.origin + ray.direction * ray.t;
+    Ray lightRay { pos, samplePos - pos, 1};
+    if (features.enableHardShadow && bvh.intersect(lightRay, hitInfo, features) && lightRay.t < 1)
+        return 0.0;
+
     return 1.0;
 }
 
@@ -38,8 +42,8 @@ float testVisibilityLightSample(const glm::vec3& samplePos, const glm::vec3& deb
 // in this method you should cycle the light sources and for each one compute their contribution
 // don't forget to check for visibility (shadows!)
 
-// Lights are stored in a single array (scene.lights) where each item can be either a PointLight, SegmentLight or ParallelogramLight.
-// You can check whether a light at index i is a PointLight using std::holds_alternative:
+// Lights are stored in a single array (scene.lights) where each item can be either a PointLight, SegmentLight or
+// ParallelogramLight. You can check whether a light at index i is a PointLight using std::holds_alternative:
 // std::holds_alternative<PointLight>(scene.lights[i])
 //
 // If it is indeed a point light, you can "convert" it to the correct type using std::get:
@@ -67,7 +71,8 @@ float testVisibilityLightSample(const glm::vec3& samplePos, const glm::vec3& deb
 //
 // You can add the light sources programmatically by creating a custom scene (modify the Custom case in the
 // loadScene function in scene.cpp). Custom lights will not be visible in rasterization view.
-glm::vec3 computeLightContribution(const Scene& scene, const BvhInterface& bvh, const Features& features, Ray ray, HitInfo hitInfo)
+glm::vec3 computeLightContribution(
+    const Scene& scene, const BvhInterface& bvh, const Features& features, Ray ray, HitInfo hitInfo)
 {
     /*if (!bvh.intersect(ray, hitInfo, features))
         return glm::vec3 { 0, 0, 0 };*/
