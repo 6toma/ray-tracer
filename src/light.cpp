@@ -84,10 +84,10 @@ glm::vec3 computeLightContribution(const Scene& scene, const BvhInterface& bvh, 
 
                 const PointLight pointLight = std::get<PointLight>(light);
                 shading += computeShading(pointLight.position, pointLight.color, features, ray, hitInfo);
-                Ray r;
-                r.origin = ray.origin + ray.t * ray.direction;
-                r.direction = hitInfo.normal;
-                drawRay(r, glm::vec3 { 0, 1, 0 });
+                //Ray r;
+                //r.origin = ray.origin + ray.t * ray.direction;
+                //r.direction = hitInfo.normal;
+                //drawRay(r, glm::vec3 { 0, 1, 0 });
 
             } else if (std::holds_alternative<SegmentLight>(light)) {
 
@@ -105,7 +105,7 @@ glm::vec3 computeLightContribution(const Scene& scene, const BvhInterface& bvh, 
 
             }
         }
-        return shading;
+        return shading / numberOfLights;
 
     } else {
         // If shading is disabled, return the albedo of the material.
