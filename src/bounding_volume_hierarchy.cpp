@@ -5,9 +5,8 @@
 #include "texture.h"
 #include "interpolate.h"
 #include <glm/glm.hpp>
-
+#include<iostream>
 struct Node {
-    std::vector<glm::vec4> traingleIndex;
     int depth;
     bool isleaf;
     std::vector<int> children;
@@ -29,7 +28,6 @@ int treeConstruction(std::vector<Node>& t, Scene* pScene,std::vector<glm::vec4>&
     if (depth > maxdepth||traingleIndex.empty())
         return -1;
     Node node;
-    node.traingleIndex = traingleIndex;
     node.boundary.lower = glm::vec3 { 1e9 };
     node.boundary.upper = glm::vec3 { -1e9 };
     for (auto t : traingleIndex) {
@@ -46,12 +44,16 @@ int treeConstruction(std::vector<Node>& t, Scene* pScene,std::vector<glm::vec4>&
     t.push_back(node);
     int res = t.size() - 1;
     if (traingleIndex.size() == 1) {
-        node.isleaf = true;
+        t[res].isleaf = true;
+        for (auto traingle : traingleIndex) {
+            for (int i = 0; i < 4; i++)
+                t[res].children.push_back(traingle[i]);
+        }
         return res;
     }
     int median = traingleIndex.size() / 2;//median to the right child
 
-    int axis = depth % 3 + 1;
+    int axis = depth % 3;
     std::sort(
         traingleIndex.begin(),
         traingleIndex.end(),
@@ -68,10 +70,17 @@ int treeConstruction(std::vector<Node>& t, Scene* pScene,std::vector<glm::vec4>&
     if (traingleIndex.size() % 2)
         median++;
     std::vector<glm::vec4> rightcontent = { traingleIndex.begin() + median, traingleIndex.end() };
-    node.children.push_back(treeConstruction(t, pScene, leftcontent, depth+1));
-    node.children.push_back(treeConstruction(t, pScene, rightcontent, depth + 1));
-    if (node.children[0] == -1 && node.children[1] == -1) {
-        node.isleaf = true;
+    int v1 = treeConstruction(t, pScene, leftcontent, depth + 1);
+    t[res].children.push_back(v1);
+    int v2 = treeConstruction(t, pScene, rightcontent, depth + 1);
+    t[res].children.push_back(v2);
+    if (t[res].children[0] == -1 && t[res].children[1] == -1) {
+        t[res].children.clear();
+        t[res].isleaf = true;
+        for (auto traingle : traingleIndex) {
+            for (int i = 0; i < 4; i++)
+                t[res].children.push_back(traingle[i]);
+        }
     }
     return res;
 }
@@ -121,11 +130,15 @@ void BoundingVolumeHierarchy::debugDrawLevel(int level)
     // Draw the AABB as a transparent green box.
     //AxisAlignedBox aabb{ glm::vec3(-0.05f), glm::vec3(0.05f, 1.05f, 1.05f) };
     //drawShape(aabb, DrawMode::Filled, glm::vec3(0.0f, 1.0f, 0.0f), 0.2f);
-
+    for (Node node : tree) {
+        if (node.depth == level) {
+            drawAABB(node.boundary, DrawMode::Wireframe, glm::vec3(1.0f, 1.0f, 1.0f), 0.7f);
+        }
+    }
     // Draw the AABB as a (white) wireframe box.
-    AxisAlignedBox aabb { glm::vec3(0.0f), glm::vec3(0.0f, 1.05f, 1.05f) };
+  //  AxisAlignedBox aabb { glm::vec3(0.0f), glm::vec3(0.0f, 1.05f, 1.05f) };
     //drawAABB(aabb, DrawMode::Wireframe);
-    drawAABB(aabb, DrawMode::Filled, glm::vec3(0.05f, 1.0f, 0.05f), 0.1f);
+  //  drawAABB(aabb, DrawMode::Filled, glm::vec3(0.05f, 1.0f, 0.05f), 0.1f);
 }
 
 
@@ -140,9 +153,27 @@ void BoundingVolumeHierarchy::debugDrawLeaf(int leafIdx)
     //drawShape(aabb, DrawMode::Filled, glm::vec3(0.0f, 1.0f, 0.0f), 0.2f);
 
     // Draw the AABB as a (white) wireframe box.
-    AxisAlignedBox aabb { glm::vec3(0.0f), glm::vec3(0.0f, 1.05f, 1.05f) };
+    //AxisAlignedBox aabb { glm::vec3(0.0f), glm::vec3(0.0f, 1.05f, 1.05f) };
     //drawAABB(aabb, DrawMode::Wireframe);
-    drawAABB(aabb, DrawMode::Filled, glm::vec3(0.05f, 1.0f, 0.05f), 0.1f);
+    int ind = 0;
+    for (Node node : tree) {
+        if (node.isleaf) {
+            if (ind == leafIdx) {
+                for (int i = 0; i < node.children.size();i+=4) {
+                    int tt = node.children[i];
+                    int x = node.children[i + 1];
+                    int y = node.children[i + 2];
+                    int z = node.children[i + 3];
+                    Vertex v1 = m_pScene->meshes[tt].vertices[x];
+                    Vertex v2 = m_pScene->meshes[tt].vertices[y];
+                    Vertex v3 = m_pScene->meshes[tt].vertices[z];
+                    drawTriangle(v1, v2, v3);
+                }
+                return;
+            }
+            ind++;
+        }
+    }
 
     // once you find the leaf node, you can use the function drawTriangle (from draw.h) to draw the contained primitives
 }
