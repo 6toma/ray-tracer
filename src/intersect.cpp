@@ -56,8 +56,7 @@ bool intersectRayWithTriangle(const glm::vec3& v0, const glm::vec3& v1, const gl
     float t = ray.t;
     glm::vec3 normal = glm::normalize(glm::cross(v0 - v1, v0 - v2));
     if (intersectRayWithPlane(trianglePlane(v0, v1, v2), ray)
-        && pointInTriangle(v0, v1, v2, normal, ray.origin + ray.direction * ray.t)) {
-        ray.t = std::min(t, ray.t);
+        && pointInTriangle(v0, v1, v2, normal, ray.origin + ray.direction * ray.t) && ray.t < t) {
         hitInfo.normal = normal;
         hitInfo.barycentricCoord = computeBarycentricCoord(v0, v1, v2, ray.origin + ray.direction * ray.t);
         return true;
@@ -81,12 +80,16 @@ bool intersectRayWithShape(const Sphere& sphere, Ray& ray, HitInfo& hitInfo)
 
     float t1 = (-sqrt(d) - 2 * dot(ray.origin - sphere.center, ray.direction)) / (2 * dot(ray.direction, ray.direction));
     float t2 = (sqrt(d) - 2 * dot(ray.origin - sphere.center, ray.direction)) / (2 * dot(ray.direction, ray.direction));
+    float t = std::min(t1, t2);
 
-    ray.t = std::min(ray.t, std::min(t1, t2));
+    if (t < ray.t) {
+        ray.t = t;
+        hitInfo.normal = glm::normalize(ray.origin + ray.direction * ray.t - sphere.center);
+        hitInfo.material = sphere.material;
+        return true;
+    }
 
-    hitInfo.normal = glm::normalize(ray.origin + ray.direction * ray.t - sphere.center);
-
-    return true;
+    return false;
 }
 
 /// Input: an axis-aligned bounding box with the following parameters: minimum coordinates box.lower and maximum coordinates box.upper
