@@ -7,9 +7,17 @@
 #include <glm/glm.hpp>
 #include<iostream>
 struct Node {
+    // represent the level of the node in the tree, the depth of the root is 0
     int depth;
+    //true iff the node doesn't have children
     bool isleaf;
+    //if this node is an internal node, it stores the TWO indexes of it's children. if this node only has one child, the other index will be set as -1.
+    //if this node is a leaf node, it stores infomation about traingles in it's AABB,every continuous 4 values represent a triangle
+    //so the length of the vector should always be a mutiple of four. let's say (a,b,c,d) stand for the coordinate of a triangle,
+    //"a" represents the ordinal of it's cooresponding mesh, start from zero, (b,c,d) are indexes of points stored in this mesh, 
+    //representing 3 vertices for the triangle. see method "debugDrawLeaf" for an usage example
     std::vector<int> children;
+    //represent the bounding box, see method "debugDrawLevel" for an usage exmaple.
     AxisAlignedBox boundary;
     /*
     Node(std::vector<glm::vec4>& index) {
@@ -23,6 +31,7 @@ struct Node {
         }
     }*/
 };
+//!!! the final tree stucture, all the access to bvh should be via this.
 std::vector<Node> tree;
 int treeConstruction(std::vector<Node>& t, Scene* pScene,std::vector<glm::vec4>& traingleIndex,int depth, int maxdepth = 20){
     if (depth > maxdepth||traingleIndex.empty())
@@ -70,9 +79,9 @@ int treeConstruction(std::vector<Node>& t, Scene* pScene,std::vector<glm::vec4>&
     if (traingleIndex.size() % 2)
         median++;
     std::vector<glm::vec4> rightcontent = { traingleIndex.begin() + median, traingleIndex.end() };
-    int v1 = treeConstruction(t, pScene, leftcontent, depth + 1);
+    int v1 = treeConstruction(t, pScene, leftcontent, depth + 1,maxdepth);
     t[res].children.push_back(v1);
-    int v2 = treeConstruction(t, pScene, rightcontent, depth + 1);
+    int v2 = treeConstruction(t, pScene, rightcontent, depth + 1,maxdepth);
     t[res].children.push_back(v2);
     if (t[res].children[0] == -1 && t[res].children[1] == -1) {
         t[res].children.clear();
