@@ -168,6 +168,7 @@ void BoundingVolumeHierarchy::debugDrawLeaf(int leafIdx)
     for (Node node : tree) {
         if (node.isleaf) {
             if (ind == leafIdx) {
+                drawAABB(node.boundary, DrawMode::Wireframe, glm::vec3(1.0f, 1.0f, 1.0f), 0.7f);
                 for (int i = 0; i < node.children.size();i+=4) {
                     int tt = node.children[i];
                     int x = node.children[i + 1];
