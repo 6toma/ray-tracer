@@ -31,7 +31,7 @@ float testVisibilityLightSample(const glm::vec3& samplePos, const glm::vec3& deb
     const Features& features, Ray ray, HitInfo hitInfo)
 {
     glm::vec3 pos = ray.origin + ray.direction * ray.t;
-    Ray lightRay { pos, samplePos - pos, 1};
+    Ray lightRay { pos + (samplePos - pos) * glm::vec3(0.000001), (samplePos - pos) * glm::vec3(0.999999), 1 };
     if (features.enableHardShadow && bvh.intersect(lightRay, hitInfo, features) && lightRay.t < 1)
         return 0.0;
 
@@ -88,7 +88,8 @@ glm::vec3 computeLightContribution(
             if (std::holds_alternative<PointLight>(light)) {
 
                 const PointLight pointLight = std::get<PointLight>(light);
-                shading += computeShading(pointLight.position, pointLight.color, features, ray, hitInfo);
+                shading += computeShading(pointLight.position, pointLight.color, features, ray, hitInfo)
+                    * testVisibilityLightSample(pointLight.position, pointLight.color, bvh, features, ray, hitInfo);
                 //Ray r;
                 //r.origin = ray.origin + ray.t * ray.direction;
                 //r.direction = hitInfo.normal;
