@@ -22,6 +22,37 @@ glm::vec3 getFinalColor(const Scene& scene, const BvhInterface& bvh, Ray ray, co
         // Draw a white debug ray if the ray hits.
         drawRay(ray, Lo);
 
+        for (const auto& light : scene.lights) {
+            if (features.enableHardShadow && std::holds_alternative<PointLight>(light)) {
+                const PointLight pointLight = std::get<PointLight>(light);
+                glm::vec3 pos = ray.origin + ray.direction * ray.t;
+                Ray lightRay { pos + (pointLight.position - pos) * glm::vec3(0.000001),
+                    (pointLight.position - pos) * glm::vec3(0.999999),
+                    1 };
+                if (bvh.intersect(lightRay, hitInfo, features)
+                    && lightRay.t < 1) {
+                    drawRay(lightRay, glm::vec3(1, 0, 0));
+                } else {
+                    lightRay.t = 1;
+                    drawRay(lightRay, glm::vec3(0, 1, 0));
+                }
+
+            } else if (std::holds_alternative<SegmentLight>(light)) {
+
+                const SegmentLight segmentLight = std::get<SegmentLight>(light);
+                glm::vec3 lightPosition, lightColor;
+                sampleSegmentLight(segmentLight, lightPosition, lightColor);
+                //shading += computeShading(lightPosition, lightColor, features, ray, hitInfo);
+
+            } else if (std::holds_alternative<ParallelogramLight>(light)) {
+
+                const ParallelogramLight parallelogramLight = std::get<ParallelogramLight>(light);
+                glm::vec3 lightPosition, lightColor;
+                sampleParallelogramLight(parallelogramLight, lightPosition, lightColor);
+                //shading += computeShading(lightPosition, lightColor, features, ray, hitInfo);
+            }
+        }
+
         // Set the color of the pixel to white if the ray hits.
         return Lo;
     } else {
