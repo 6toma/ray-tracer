@@ -13,6 +13,7 @@
 MotionBlurSetting motionBlurSetting {};
 
 static const std::filesystem::path dataDirPath { DATA_DIR };
+Image img(dataDirPath / "default.png");
 glm::vec3 getFinalColor(const Scene& scene, const BvhInterface& bvh, Ray ray, const Features& features, int rayDepth)
 {
     HitInfo hitInfo;
@@ -46,7 +47,8 @@ glm::vec3 getFinalColor(const Scene& scene, const BvhInterface& bvh, Ray ray, co
 
         drawRay(ray, glm::vec3(1.0f, 0.0f, 0.0f));
         // Set the color of the pixel to black if the ray misses.
-        return acquireTexelEnvironment(Image(dataDirPath / "default.png"),ray.direction,features);
+
+        return acquireTexelEnvironment(img,ray.direction,features);
     }
 }
 
