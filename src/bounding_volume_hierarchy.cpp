@@ -79,6 +79,9 @@ bool BoundingVolumeHierarchy::intersect(Ray& ray, HitInfo& hitInfo, const Featur
                 const auto v2 = mesh.vertices[tri[2]];
                 bool h = intersectRayWithTriangle(v0.position, v1.position, v2.position, ray, hitInfo);
                 if (h) {
+                    if (features.enableNormalInterp) {
+                        hitInfo.normal = interpolateNormal(v0.normal, v1.normal, v2.normal, hitInfo.barycentricCoord);
+                    }
                     hitInfo.material = mesh.material;
                     hit = true;
                 }

@@ -202,10 +202,10 @@ void drawRay(const Ray& ray, const glm::vec3& color)
 
 void drawNormals(const Scene& scene, int interpolationLevel)
 {
-    for (const auto& mesh : scene.meshes) {
-        if (!enableDebugDraw)
-            return;
+    if (!enableDebugDraw)
+        return;
 
+    for (const auto& mesh : scene.meshes) {
         glPushAttrib(GL_ALL_ATTRIB_BITS);
         glDisable(GL_LIGHTING);
         glBegin(GL_LINES);
