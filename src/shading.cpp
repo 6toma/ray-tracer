@@ -29,8 +29,9 @@ const Ray computeReflectionRay (Ray ray, HitInfo hitInfo)
     Ray reflectionRay {};
 
     if (hitInfo.material.ks != glm::vec3{ 0, 0, 0 }) { // if ks is black, then there is no specular reflected ray
-        // origin of the reflection ray is the point on the surface, but to avoid floating point errors let's move it a bit towards the ray origin
-        reflectionRay.origin = ray.origin + ray.t * ray.direction - glm::vec3(0.000001);
+        // origin of the reflection ray is the point on the surface 
+        // but to avoid floating point errors let's move it a bit towards the normal to get out of the plane ( origin might be inside plane bc of errors)
+        reflectionRay.origin = ray.origin + ray.t * ray.direction + glm::vec3(0.000001) * hitInfo.normal;
         reflectionRay.t = std::numeric_limits<float>::max();
         // to get vector from origin to point on the surface we do: ray.origin - pointOnSurface, where the point is ray.origin + ray.t * ray.direction
         glm::vec3 fromPointToOrigin = glm::normalize(-ray.t * ray.direction); // we can normalize since we only need the direction of the reflected vector

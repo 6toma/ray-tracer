@@ -24,8 +24,8 @@ glm::vec3 getFinalColor(const Scene& scene, const BvhInterface& bvh, Ray ray, co
             Lo += hitInfo.material.ks * reflectedColor;
         }
 
-        // Draw a white debug ray if the ray hits.
-        drawRay(ray, Lo);
+        // Visual debug for shading + recursive ray tracing
+        drawRay(ray, Lo); 
 
         for (const auto& light : scene.lights) {
             if (features.enableHardShadow && std::holds_alternative<PointLight>(light)) {
