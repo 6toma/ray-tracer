@@ -1,4 +1,5 @@
 #include "intersect.h"
+#include "interpolate.h"
 // Suppress warnings in third-party code.
 #include <framework/disable_all_warnings.h>
 DISABLE_WARNINGS_PUSH()
@@ -55,8 +56,7 @@ bool intersectRayWithTriangle(const glm::vec3& v0, const glm::vec3& v1, const gl
     float t = ray.t;
     glm::vec3 normal = glm::normalize(glm::cross(v0 - v1, v0 - v2));
     if (intersectRayWithPlane(trianglePlane(v0, v1, v2), ray)
-        && pointInTriangle(v0, v1, v2, normal, ray.origin + ray.direction * ray.t)) {
-        ray.t = std::min(t, ray.t);
+        && pointInTriangle(v0, v1, v2, normal, ray.origin + ray.direction * ray.t) && ray.t < t) {
         hitInfo.normal = normal;
         hitInfo.barycentricCoord = computeBarycentricCoord(v0, v1, v2, ray.origin + ray.direction * ray.t);
         return true;
@@ -70,84 +70,76 @@ bool intersectRayWithTriangle(const glm::vec3& v0, const glm::vec3& v1, const gl
 /// Output: if intersects then modify the hit parameter ray.t and return true, otherwise return false
 bool intersectRayWithShape(const Sphere& sphere, Ray& ray, HitInfo& hitInfo)
 {
-    float d = 4 * dot(ray.origin - sphere.center, ray.direction) * dot(ray.origin - sphere.center, ray.direction)
-        - 4 * dot(ray.direction, ray.direction)
-            * (dot(ray.origin - sphere.center, ray.origin - sphere.center) - sphere.radius * sphere.radius);
+    float t = ray.t;
+    ray.origin -= sphere.center;
+    float a = std::pow(ray.direction.x, 2.0f) + std::pow(ray.direction.y, 2.0f) + std::pow(ray.direction.z, 2.0f);
+    float b = 2 * (ray.direction.x * ray.origin.x + ray.direction.y * ray.origin.y + ray.direction.z * ray.origin.z);
+    float c = std::pow(ray.origin.x, 2.0f) + std::pow(ray.origin.y, 2.0f) + std::pow(ray.origin.z, 2.0f)
+        - std::pow(sphere.radius, 2.0f);
 
-    if (d < 0) {
+    ray.origin += sphere.center;
+    float discriminant = b * b - 4 * a * c;
+
+    if (discriminant < 0)
         return false;
+    else if (discriminant == 0) {
+        ray.t = std::min(-b / (2 * a), ray.t);
+        if (ray.t == 0) {
+            ray.t = t; // revert ray.t if no intersection
+            return false;
+        } 
+        hitInfo.normal = glm::normalize(ray.origin + ray.direction * ray.t - sphere.center);
+        hitInfo.material = sphere.material;
+        return true;
+    } else {
+        float t1 = ((-b + std::sqrt(discriminant)) / (2 * a));
+        float t2 = ((-b - std::sqrt(discriminant)) / (2 * a));
+        float t;
+        if (t2 < 0)
+            t = t1;
+        else
+            t = std::min(t1, t2);
+        ray.t = std::min(t, ray.t);
+        if (ray.t == 0) {
+            ray.t = t; // revert ray.t if no intersection
+            return false;
+        }
+        hitInfo.normal = glm::normalize(ray.origin + ray.direction * ray.t - sphere.center);
+        hitInfo.material = sphere.material;
+        return true;
     }
-
-    float t1 = (-sqrt(d) - 2 * dot(ray.origin - sphere.center, ray.direction)) / (2 * dot(ray.direction, ray.direction));
-    float t2 = (sqrt(d) - 2 * dot(ray.origin - sphere.center, ray.direction)) / (2 * dot(ray.direction, ray.direction));
-
-    ray.t = std::min(ray.t, std::min(t1, t2));
-
-    hitInfo.normal = glm::normalize(ray.origin + ray.direction * ray.t - sphere.center);
-
-    return true;
 }
 
 /// Input: an axis-aligned bounding box with the following parameters: minimum coordinates box.lower and maximum coordinates box.upper
 /// Output: if intersects then modify the hit parameter ray.t and return true, otherwise return false
 bool intersectRayWithShape(const AxisAlignedBox& box, Ray& ray)
 {
-    bool hit = false;
-    float t = ray.t;
-    if (ray.direction.x != 0) {
-        float t1 = (box.lower.x - ray.origin.x) / ray.direction.x;
-        float t2 = (box.upper.x - ray.origin.x) / ray.direction.x;
+    float txmin = (box.lower.x - ray.origin.x) / ray.direction.x;
+    float txmax = (box.upper.x - ray.origin.x) / ray.direction.x;
+    float tymin = (box.lower.y - ray.origin.y) / ray.direction.y;
+    float tymax = (box.upper.y - ray.origin.y) / ray.direction.y;
+    float tzmin = (box.lower.z - ray.origin.z) / ray.direction.z;
+    float tzmax = (box.upper.z - ray.origin.z) / ray.direction.z;
 
-        if (ray.origin.y + ray.direction.y * t1 >= box.lower.y && ray.origin.y + ray.direction.y * t1 <= box.upper.y
-            && ray.origin.z + ray.direction.z * t1 >= box.lower.z && ray.origin.z + ray.direction.z * t1 <= box.upper.z
-            && t1 >= 0) {
-            hit = true;
-            ray.t = std::min(ray.t, t1);
-        }
+    float tinx = std::min(txmin, txmax);
+    float toutx = std::max(txmin, txmax);
+    float tiny = std::min(tymin, tymax);
+    float touty = std::max(tymin, tymax);
+    float tinz = std::min(tzmin, tzmax);
+    float toutz = std::max(tzmin, tzmax);
 
-        if (ray.origin.y + ray.direction.y * t2 >= box.lower.y && ray.origin.y + ray.direction.y * t2 <= box.upper.y
-            && ray.origin.z + ray.direction.z * t2 >= box.lower.z && ray.origin.z + ray.direction.z * t2 <= box.upper.z
-            && t2 >= 0) {
-            hit = true;
-            ray.t = std::min(ray.t, t2);
-        }
-    }
-    if (ray.direction.y != 0) {
-        float t1 = (box.lower.y - ray.origin.y) / ray.direction.y;
-        float t2 = (box.upper.y - ray.origin.y) / ray.direction.y;
+    float tin = std::max(std::max(tinx, tiny), tinz);
+    float tout = std::min(std::min(toutx, touty), toutz);
 
-        if (ray.origin.x + ray.direction.x * t1 >= box.lower.x && ray.origin.x + ray.direction.x * t1 <= box.upper.x
-            && ray.origin.z + ray.direction.z * t1 >= box.lower.z && ray.origin.z + ray.direction.z * t1 <= box.upper.z
-            && t1 >= 0) {
-            hit = true;
-            ray.t = std::min(ray.t, t1);
-        }
+    if (tin > tout || tout < 0)
+        return false;
 
-        if (ray.origin.x + ray.direction.x * t2 >= box.lower.x && ray.origin.x + ray.direction.x * t2 <= box.upper.x
-            && ray.origin.z + ray.direction.z * t2 >= box.lower.z && ray.origin.z + ray.direction.z * t2 <= box.upper.z
-            && t2 >= 0) {
-            hit = true;
-            ray.t = std::min(ray.t, t2);
-        }
-    }
-    if (ray.direction.z != 0) {
-        float t1 = (box.lower.z - ray.origin.z) / ray.direction.z;
-        float t2 = (box.upper.z - ray.origin.z) / ray.direction.z;
+    if (tin < 0) 
+        ray.t = std::min(tout, ray.t);
+    else
+        ray.t = std::min(tin, ray.t);
 
-        if (ray.origin.y + ray.direction.y * t1 >= box.lower.y && ray.origin.y + ray.direction.y * t1 <= box.upper.y
-            && ray.origin.x + ray.direction.x * t1 >= box.lower.x && ray.origin.x + ray.direction.x * t1 <= box.upper.x
-            && t1 >= 0) {
-            hit = true;
-            ray.t = std::min(ray.t, t1);
-        }
-
-        if (ray.origin.y + ray.direction.y * t2 >= box.lower.y && ray.origin.y + ray.direction.y * t2 <= box.upper.y
-            && ray.origin.x + ray.direction.x * t2 >= box.lower.x && ray.origin.x + ray.direction.x * t2 <= box.upper.x
-            && t2 >= 0) {
-            hit = true;
-            ray.t = std::min(ray.t, t2);
-        }
-    }
-
-    return hit;
+    if (ray.t == 0)
+        return false;
+    return true;
 }

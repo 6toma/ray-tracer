@@ -15,7 +15,7 @@ glm::vec3 computeBarycentricCoord (const glm::vec3& v0, const glm::vec3& v1, con
 
 glm::vec3 interpolateNormal (const glm::vec3& n0, const glm::vec3& n1, const glm::vec3& n2, const glm::vec3 barycentricCoord)
 {
-    return barycentricCoord.x * n0 + barycentricCoord.y * n1 + barycentricCoord * n2;
+    return barycentricCoord.x * n0 + barycentricCoord.y * n1 + barycentricCoord.z * n2;
 }
 
 glm::vec2 interpolateTexCoord (const glm::vec2& t0, const glm::vec2& t1, const glm::vec2& t2, const glm::vec3 barycentricCoord)
