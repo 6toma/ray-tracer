@@ -22,6 +22,8 @@ DISABLE_WARNINGS_PUSH()
 #include <glm/mat4x4.hpp>
 DISABLE_WARNINGS_POP()
 #include <algorithm>
+#include <bvh_interface.h>
+#include <light.h>
 
 bool enableDebugDraw = false;
 
@@ -45,15 +47,15 @@ void drawExampleOfCustomVisualDebug()
     glEnd();
 }
 
-
-void drawTriangle (const Vertex& v0, const Vertex& v1, const Vertex& v2 ) {
+void drawTriangle(const Vertex& v0, const Vertex& v1, const Vertex& v2)
+{
     glBegin(GL_TRIANGLES);
-        glNormal3fv(glm::value_ptr(v0.normal));
-        glVertex3fv(glm::value_ptr(v0.position));
-        glNormal3fv(glm::value_ptr(v1.normal));
-        glVertex3fv(glm::value_ptr(v1.position));
-        glNormal3fv(glm::value_ptr(v2.normal));
-        glVertex3fv(glm::value_ptr(v2.position));
+    glNormal3fv(glm::value_ptr(v0.normal));
+    glVertex3fv(glm::value_ptr(v0.position));
+    glNormal3fv(glm::value_ptr(v1.normal));
+    glVertex3fv(glm::value_ptr(v1.position));
+    glNormal3fv(glm::value_ptr(v2.normal));
+    glVertex3fv(glm::value_ptr(v2.position));
     glEnd();
 }
 
@@ -114,40 +116,40 @@ static void drawAABBInternal(const AxisAlignedBox& box)
 
     glBegin(GL_QUADS);
     glNormal3f(0, 0, -1);
-    glVertex3f(box.lower.x, box.upper.y, box.lower.z); //3
-    glVertex3f(box.upper.x, box.upper.y, box.lower.z); //2
-    glVertex3f(box.upper.x, box.lower.y, box.lower.z); //1
-    glVertex3f(box.lower.x, box.lower.y, box.lower.z); //0
+    glVertex3f(box.lower.x, box.upper.y, box.lower.z); // 3
+    glVertex3f(box.upper.x, box.upper.y, box.lower.z); // 2
+    glVertex3f(box.upper.x, box.lower.y, box.lower.z); // 1
+    glVertex3f(box.lower.x, box.lower.y, box.lower.z); // 0
 
     glNormal3f(0, 0, 1);
-    glVertex3f(box.upper.x, box.lower.y, box.upper.z); //5
-    glVertex3f(box.upper.x, box.upper.y, box.upper.z); //6
-    glVertex3f(box.lower.x, box.upper.y, box.upper.z); //7
-    glVertex3f(box.lower.x, box.lower.y, box.upper.z); //4
+    glVertex3f(box.upper.x, box.lower.y, box.upper.z); // 5
+    glVertex3f(box.upper.x, box.upper.y, box.upper.z); // 6
+    glVertex3f(box.lower.x, box.upper.y, box.upper.z); // 7
+    glVertex3f(box.lower.x, box.lower.y, box.upper.z); // 4
 
     glNormal3f(1, 0, 0);
-    glVertex3f(box.upper.x, box.upper.y, box.lower.z); //2
-    glVertex3f(box.upper.x, box.upper.y, box.upper.z); //6
-    glVertex3f(box.upper.x, box.lower.y, box.upper.z); //5
-    glVertex3f(box.upper.x, box.lower.y, box.lower.z); //1
+    glVertex3f(box.upper.x, box.upper.y, box.lower.z); // 2
+    glVertex3f(box.upper.x, box.upper.y, box.upper.z); // 6
+    glVertex3f(box.upper.x, box.lower.y, box.upper.z); // 5
+    glVertex3f(box.upper.x, box.lower.y, box.lower.z); // 1
 
     glNormal3f(-1, 0, 0);
-    glVertex3f(box.lower.x, box.lower.y, box.upper.z); //4
-    glVertex3f(box.lower.x, box.upper.y, box.upper.z); //7
-    glVertex3f(box.lower.x, box.upper.y, box.lower.z); //3
-    glVertex3f(box.lower.x, box.lower.y, box.lower.z); //0
+    glVertex3f(box.lower.x, box.lower.y, box.upper.z); // 4
+    glVertex3f(box.lower.x, box.upper.y, box.upper.z); // 7
+    glVertex3f(box.lower.x, box.upper.y, box.lower.z); // 3
+    glVertex3f(box.lower.x, box.lower.y, box.lower.z); // 0
 
     glNormal3f(0, 1, 0);
-    glVertex3f(box.lower.x, box.upper.y, box.upper.z); //7
-    glVertex3f(box.upper.x, box.upper.y, box.upper.z); //6
-    glVertex3f(box.upper.x, box.upper.y, box.lower.z); //2
-    glVertex3f(box.lower.x, box.upper.y, box.lower.z); //3
+    glVertex3f(box.lower.x, box.upper.y, box.upper.z); // 7
+    glVertex3f(box.upper.x, box.upper.y, box.upper.z); // 6
+    glVertex3f(box.upper.x, box.upper.y, box.lower.z); // 2
+    glVertex3f(box.lower.x, box.upper.y, box.lower.z); // 3
 
     glNormal3f(0, -1, 0);
-    glVertex3f(box.upper.x, box.lower.y, box.lower.z); //1
-    glVertex3f(box.upper.x, box.lower.y, box.upper.z); //5
-    glVertex3f(box.lower.x, box.lower.y, box.upper.z); //4
-    glVertex3f(box.lower.x, box.lower.y, box.lower.z); //0
+    glVertex3f(box.upper.x, box.lower.y, box.lower.z); // 1
+    glVertex3f(box.upper.x, box.lower.y, box.upper.z); // 5
+    glVertex3f(box.lower.x, box.lower.y, box.upper.z); // 4
+    glVertex3f(box.lower.x, box.lower.y, box.lower.z); // 0
     glEnd();
 
     glPopMatrix();
@@ -176,6 +178,43 @@ void drawScene(const Scene& scene)
         drawSphere(sphere);
 }
 
+void drawLine(const glm::vec3 start, const glm::vec3 end, const glm::vec3& color)
+{
+    if (!enableDebugDraw)
+        return;
+
+    glPushAttrib(GL_ALL_ATTRIB_BITS);
+    glDisable(GL_LIGHTING);
+    glBegin(GL_LINES);
+
+    glColor3fv(glm::value_ptr(color));
+    glVertex3fv(glm::value_ptr(start));
+    glColor3fv(glm::value_ptr(color));
+    glVertex3fv(glm::value_ptr(end));
+    glEnd();
+    glPopAttrib();
+}
+
+void drawLine(const Ray& ray, const glm::vec3& color)
+{
+    if (!enableDebugDraw)
+        return;
+
+    const glm::vec3 hitPoint = ray.origin + std::clamp(ray.t, 0.0f, 100.0f) * ray.direction;
+
+    glPushAttrib(GL_ALL_ATTRIB_BITS);
+    glDisable(GL_LIGHTING);
+    glBegin(GL_LINES);
+
+    glColor3fv(glm::value_ptr(color));
+    glVertex3fv(glm::value_ptr(ray.origin));
+    glColor3fv(glm::value_ptr(color));
+    glVertex3fv(glm::value_ptr(hitPoint));
+
+    glEnd();
+    glPopAttrib();
+}
+
 void drawRay(const Ray& ray, const glm::vec3& color)
 {
     if (!enableDebugDraw)
@@ -192,6 +231,7 @@ void drawRay(const Ray& ray, const glm::vec3& color)
     glVertex3fv(glm::value_ptr(ray.origin));
     glColor3fv(glm::value_ptr(color));
     glVertex3fv(glm::value_ptr(hitPoint));
+
     glEnd();
 
     if (hit)
@@ -200,22 +240,85 @@ void drawRay(const Ray& ray, const glm::vec3& color)
     glPopAttrib();
 }
 
+void drawShadowRays(const Ray& ray, const Scene& scene, const BvhInterface& bvh, const Features& features)
+{
+    if (!enableDebugDraw)
+        return;
+
+    HitInfo hitInfo;
+
+    for (const auto& light : scene.lights) {
+        if (std::holds_alternative<PointLight>(light)) {
+            const PointLight pointLight = std::get<PointLight>(light);
+            glm::vec3 pos = ray.origin + ray.direction * ray.t;
+            glm::vec3 offset = glm::normalize(pointLight.position - pos) * glm::vec3(0.000001);
+            Ray lightRay { pos + offset, pointLight.position - pos - offset, 1 };
+            if (bvh.intersect(lightRay, hitInfo, features) && lightRay.t < 1) {
+                drawRay(lightRay, glm::vec3(1, 0, 0));
+            } else {
+                lightRay.t = 1;
+                drawRay(lightRay, glm::vec3(0, 1, 0));
+            }
+
+        } else if (features.enableSoftShadow && std::holds_alternative<SegmentLight>(light)) {
+            const SegmentLight segmentLight = std::get<SegmentLight>(light);
+            glm::vec3 pos = ray.origin + ray.direction * ray.t;
+
+            glm::vec3 lightPosition, lightColor;
+            int numSamples = glm::length(segmentLight.endpoint0 - segmentLight.endpoint1) * 100000;
+            for (int i = 0; i < numSamples; i++) {
+                sampleSegmentLight(segmentLight, lightPosition, lightColor);
+
+                glm::vec3 offset = glm::normalize(lightPosition - pos) * glm::vec3(0.000001);
+                Ray lightRay { pos + offset, lightPosition - pos - offset, 1 };
+                if (bvh.intersect(lightRay, hitInfo, features) && lightRay.t < 1) {
+                    drawRay(lightRay, glm::vec3(1, 0, 0));
+                } else {
+                    lightRay.t = 1;
+                    drawRay(lightRay, glm::vec3(0, 1, 0));
+                }
+            }
+        } else if (features.enableSoftShadow && std::holds_alternative<ParallelogramLight>(light)) {
+            const ParallelogramLight parallelogramLight = std::get<ParallelogramLight>(light);
+            glm::vec3 pos = ray.origin + ray.direction * ray.t;
+
+            glm::vec3 lightPosition, lightColor;
+            int numSamples = glm::length(glm::cross(parallelogramLight.edge01, parallelogramLight.edge02)) * 1000;
+            for (int i = 0; i < numSamples; i++) {
+                sampleParallelogramLight(parallelogramLight, lightPosition, lightColor);
+
+                glm::vec3 offset = glm::normalize(lightPosition - pos) * glm::vec3(0.000001);
+                Ray lightRay { pos + offset, lightPosition - pos - offset, 1 };
+                if (bvh.intersect(lightRay, hitInfo, features) && lightRay.t < 1) {
+                    drawRay(lightRay, glm::vec3(1, 0, 0));
+                } else {
+                    lightRay.t = 1;
+                    drawRay(lightRay, glm::vec3(0, 1, 0));
+                }
+            }
+        }
+    }
+}
+
+void drawNormal(const Ray& ray, const HitInfo& hitInfo)
+{
+    if (!enableDebugDraw)
+        return;
+
+    drawLine(Ray { ray.origin + ray.direction * ray.t, hitInfo.normal, 0.1 }, glm::abs(hitInfo.normal));
+}
+
 void drawNormals(const Scene& scene, int interpolationLevel)
 {
     if (!enableDebugDraw)
         return;
 
     for (const auto& mesh : scene.meshes) {
-        glPushAttrib(GL_ALL_ATTRIB_BITS);
-        glDisable(GL_LIGHTING);
-        glBegin(GL_LINES);
         for (const auto& triangleIndex : mesh.triangles) {
             glm::vec3 normals[3] {};
             for (int i = 0; i < 3; i++) {
                 const auto& vertex = mesh.vertices[triangleIndex[i]];
-                glColor3fv(glm::value_ptr(glm::abs(vertex.normal)));
-                glVertex3fv(glm::value_ptr(vertex.position));
-                glVertex3fv(glm::value_ptr(vertex.position + vertex.normal / glm::vec3(10)));
+                drawLine(Ray { vertex.position, vertex.normal, 0.1 }, glm::abs(vertex.normal));
 
                 normals[i] = vertex.normal;
             }
@@ -224,55 +327,55 @@ void drawNormals(const Scene& scene, int interpolationLevel)
             // lets say its optimization because loop unrolling lol
             if (interpolationLevel == 1) {
                 glm::vec3 interNormal = interpolateNormal(normals[0], normals[1], normals[2], glm::vec3(1.0 / 3.0));
-                glm::vec3 interPos = (mesh.vertices[triangleIndex[0]].position + mesh.vertices[triangleIndex[1]].position + mesh.vertices[triangleIndex[2]].position) / glm::vec3(3);
-                glColor3fv(glm::value_ptr(glm::abs(interNormal)));
-                glVertex3fv(glm::value_ptr(interPos));
-                glVertex3fv(glm::value_ptr(interPos + interNormal / glm::vec3(10)));
+                glm::vec3 interPos
+                    = (mesh.vertices[triangleIndex[0]].position + mesh.vertices[triangleIndex[1]].position
+                          + mesh.vertices[triangleIndex[2]].position)
+                    / glm::vec3(3);
+
+                drawLine(Ray { interPos, interNormal, 0.1 }, glm::abs(interNormal));
             } else if (interpolationLevel == 2) {
-                glm::vec3 interNormal = interpolateNormal(normals[0], normals[1], normals[2], glm::vec3(3.0 / 5.0, 1.0 / 5.0, 1.0 / 5.0));
+                glm::vec3 interNormal
+                    = interpolateNormal(normals[0], normals[1], normals[2], glm::vec3(3.0 / 5.0, 1.0 / 5.0, 1.0 / 5.0));
                 glm::vec3 interPos = (mesh.vertices[triangleIndex[0]].position * glm::vec3(3.0 / 5.0))
-                    + (mesh.vertices[triangleIndex[1]].position + mesh.vertices[triangleIndex[2]].position) * glm::vec3(1.0 / 5.0);
-                glColor3fv(glm::value_ptr(glm::abs(interNormal)));
-                glVertex3fv(glm::value_ptr(interPos));
-                glVertex3fv(glm::value_ptr(interPos + interNormal / glm::vec3(10)));
+                    + (mesh.vertices[triangleIndex[1]].position + mesh.vertices[triangleIndex[2]].position)
+                        * glm::vec3(1.0 / 5.0);
+                drawLine(Ray { interPos, interNormal, 0.1 }, glm::abs(interNormal));
 
-                interNormal = interpolateNormal(normals[0], normals[1], normals[2], glm::vec3(1.0 / 5.0, 3.0 / 5.0, 1.0 / 5.0));
+                interNormal
+                    = interpolateNormal(normals[0], normals[1], normals[2], glm::vec3(1.0 / 5.0, 3.0 / 5.0, 1.0 / 5.0));
                 interPos = (mesh.vertices[triangleIndex[1]].position * glm::vec3(3.0 / 5.0))
-                    + (mesh.vertices[triangleIndex[0]].position + mesh.vertices[triangleIndex[2]].position) * glm::vec3(1.0 / 5.0);
-                glColor3fv(glm::value_ptr(glm::abs(interNormal)));
-                glVertex3fv(glm::value_ptr(interPos));
-                glVertex3fv(glm::value_ptr(interPos + interNormal / glm::vec3(10)));
+                    + (mesh.vertices[triangleIndex[0]].position + mesh.vertices[triangleIndex[2]].position)
+                        * glm::vec3(1.0 / 5.0);
+                drawLine(Ray { interPos, interNormal, 0.1 }, glm::abs(interNormal));
 
-                interNormal = interpolateNormal(normals[0], normals[1], normals[2], glm::vec3(1.0 / 5.0, 1.0 / 5.0, 3.0 / 5.0));
+                interNormal
+                    = interpolateNormal(normals[0], normals[1], normals[2], glm::vec3(1.0 / 5.0, 1.0 / 5.0, 3.0 / 5.0));
                 interPos = (mesh.vertices[triangleIndex[2]].position * glm::vec3(3.0 / 5.0))
-                    + (mesh.vertices[triangleIndex[1]].position + mesh.vertices[triangleIndex[0]].position) * glm::vec3(1.0 / 5.0);
-                glColor3fv(glm::value_ptr(glm::abs(interNormal)));
-                glVertex3fv(glm::value_ptr(interPos));
-                glVertex3fv(glm::value_ptr(interPos + interNormal / glm::vec3(10)));
+                    + (mesh.vertices[triangleIndex[1]].position + mesh.vertices[triangleIndex[0]].position)
+                        * glm::vec3(1.0 / 5.0);
+                drawLine(Ray { interPos, interNormal, 0.1 }, glm::abs(interNormal));
 
-                interNormal = interpolateNormal(normals[0], normals[1], normals[2], glm::vec3(2.0 / 5.0, 2.0 / 5.0, 1.0 / 5.0));
+                interNormal
+                    = interpolateNormal(normals[0], normals[1], normals[2], glm::vec3(2.0 / 5.0, 2.0 / 5.0, 1.0 / 5.0));
                 interPos = (mesh.vertices[triangleIndex[2]].position * glm::vec3(1.0 / 5.0))
-                    + (mesh.vertices[triangleIndex[1]].position + mesh.vertices[triangleIndex[0]].position) * glm::vec3(2.0 / 5.0);
-                glColor3fv(glm::value_ptr(glm::abs(interNormal)));
-                glVertex3fv(glm::value_ptr(interPos));
-                glVertex3fv(glm::value_ptr(interPos + interNormal / glm::vec3(10)));
+                    + (mesh.vertices[triangleIndex[1]].position + mesh.vertices[triangleIndex[0]].position)
+                        * glm::vec3(2.0 / 5.0);
+                drawLine(Ray { interPos, interNormal, 0.1 }, glm::abs(interNormal));
 
-                interNormal = interpolateNormal(normals[0], normals[1], normals[2], glm::vec3(2.0 / 5.0, 1.0 / 5.0, 2.0 / 5.0));
+                interNormal
+                    = interpolateNormal(normals[0], normals[1], normals[2], glm::vec3(2.0 / 5.0, 1.0 / 5.0, 2.0 / 5.0));
                 interPos = (mesh.vertices[triangleIndex[1]].position * glm::vec3(1.0 / 5.0))
-                    + (mesh.vertices[triangleIndex[0]].position + mesh.vertices[triangleIndex[2]].position) * glm::vec3(2.0 / 5.0);
-                glColor3fv(glm::value_ptr(glm::abs(interNormal)));
-                glVertex3fv(glm::value_ptr(interPos));
-                glVertex3fv(glm::value_ptr(interPos + interNormal / glm::vec3(10)));
+                    + (mesh.vertices[triangleIndex[0]].position + mesh.vertices[triangleIndex[2]].position)
+                        * glm::vec3(2.0 / 5.0);
+                drawLine(Ray { interPos, interNormal, 0.1 }, glm::abs(interNormal));
 
-                interNormal = interpolateNormal(normals[0], normals[1], normals[2], glm::vec3(1.0 / 5.0, 2.0 / 5.0, 2.0 / 5.0));
+                interNormal
+                    = interpolateNormal(normals[0], normals[1], normals[2], glm::vec3(1.0 / 5.0, 2.0 / 5.0, 2.0 / 5.0));
                 interPos = (mesh.vertices[triangleIndex[0]].position * glm::vec3(1.0 / 5.0))
-                    + (mesh.vertices[triangleIndex[1]].position + mesh.vertices[triangleIndex[2]].position) * glm::vec3(2.0 / 5.0);
-                glColor3fv(glm::value_ptr(glm::abs(interNormal)));
-                glVertex3fv(glm::value_ptr(interPos));
-                glVertex3fv(glm::value_ptr(interPos + interNormal / glm::vec3(10)));
+                    + (mesh.vertices[triangleIndex[1]].position + mesh.vertices[triangleIndex[2]].position)
+                        * glm::vec3(2.0 / 5.0);
+                drawLine(Ray { interPos, interNormal, 0.1 }, glm::abs(interNormal));
             }
         }
-        glEnd();
-        glPopAttrib();
     }
 }

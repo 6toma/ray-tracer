@@ -26,64 +26,11 @@ glm::vec3 getFinalColor(const Scene& scene, const BvhInterface& bvh, Ray ray, co
         // Visual debug for shading + recursive ray tracing
         drawRay(ray, Lo); 
 
-        // Skip drawing light rays if shadows are disabled
-        if (!features.enableHardShadow)
-            return Lo;
-            //return glm::abs(hitInfo.normal);
+        drawNormal(ray, hitInfo);
 
-
-        // draw shadow rays
-        for (const auto& light : scene.lights) {
-            if (std::holds_alternative<PointLight>(light)) {
-                const PointLight pointLight = std::get<PointLight>(light);
-                glm::vec3 pos = ray.origin + ray.direction * ray.t;
-                glm::vec3 offset = glm::normalize(pointLight.position - pos) * glm::vec3(0.000001);
-                Ray lightRay { pos + offset, pointLight.position - pos - offset, 1 };
-                if (bvh.intersect(lightRay, hitInfo, features) && lightRay.t < 1) {
-                    drawRay(lightRay, glm::vec3(1, 0, 0));
-                } else {
-                    lightRay.t = 1;
-                    drawRay(lightRay, glm::vec3(0, 1, 0));
-                }
-
-            } else if (features.enableSoftShadow && std::holds_alternative<SegmentLight>(light)) {
-                const SegmentLight segmentLight = std::get<SegmentLight>(light);
-                glm::vec3 pos = ray.origin + ray.direction * ray.t;
-
-                glm::vec3 lightPosition, lightColor;
-                int numSamples = glm::length(segmentLight.endpoint0 - segmentLight.endpoint1) * 100000;
-                for (int i = 0; i < numSamples; i++) {
-                    sampleSegmentLight(segmentLight, lightPosition, lightColor);
-
-                    glm::vec3 offset = glm::normalize(lightPosition - pos) * glm::vec3(0.000001);
-                    Ray lightRay { pos + offset, lightPosition - pos - offset, 1 };
-                    if (bvh.intersect(lightRay, hitInfo, features) && lightRay.t < 1) {
-                        drawRay(lightRay, glm::vec3(1, 0, 0));
-                    } else {
-                        lightRay.t = 1;
-                        drawRay(lightRay, glm::vec3(0, 1, 0));
-                    }
-                }
-            } else if (features.enableSoftShadow && std::holds_alternative<ParallelogramLight>(light)) {
-                const ParallelogramLight parallelogramLight = std::get<ParallelogramLight>(light);
-                glm::vec3 pos = ray.origin + ray.direction * ray.t;
-
-                glm::vec3 lightPosition, lightColor;
-                int numSamples = glm::length(glm::cross(parallelogramLight.edge01, parallelogramLight.edge02)) * 1000;
-                for (int i = 0; i < numSamples; i++) {
-                    sampleParallelogramLight(parallelogramLight, lightPosition, lightColor);
-
-                    glm::vec3 offset = glm::normalize(lightPosition - pos) * glm::vec3(0.000001);
-                    Ray lightRay { pos + offset, lightPosition - pos - offset, 1 };
-                    if (bvh.intersect(lightRay, hitInfo, features) && lightRay.t < 1) {
-                        drawRay(lightRay, glm::vec3(1, 0, 0));
-                    } else {
-                        lightRay.t = 1;
-                        drawRay(lightRay, glm::vec3(0, 1, 0));
-                    }
-                }
-            }
-        }
+        // Draw shadow rays
+        if (features.enableHardShadow)
+            drawShadowRays(ray, scene, bvh, features);
 
         // Set the color of the pixel to white if the ray hits.
         return Lo;
