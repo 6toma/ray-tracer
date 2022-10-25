@@ -70,6 +70,7 @@ bool intersectRayWithTriangle(const glm::vec3& v0, const glm::vec3& v1, const gl
 /// Output: if intersects then modify the hit parameter ray.t and return true, otherwise return false
 bool intersectRayWithShape(const Sphere& sphere, Ray& ray, HitInfo& hitInfo)
 {
+    float t = ray.t;
     ray.origin -= sphere.center;
     float a = std::pow(ray.direction.x, 2.0f) + std::pow(ray.direction.y, 2.0f) + std::pow(ray.direction.z, 2.0f);
     float b = 2 * (ray.direction.x * ray.origin.x + ray.direction.y * ray.origin.y + ray.direction.z * ray.origin.z);
@@ -83,8 +84,10 @@ bool intersectRayWithShape(const Sphere& sphere, Ray& ray, HitInfo& hitInfo)
         return false;
     else if (discriminant == 0) {
         ray.t = std::min(-b / (2 * a), ray.t);
-        if (ray.t == 0)
+        if (ray.t == 0) {
+            ray.t = t; // revert ray.t if no intersection
             return false;
+        } 
         hitInfo.normal = glm::normalize(ray.origin + ray.direction * ray.t - sphere.center);
         hitInfo.material = sphere.material;
         return true;
@@ -97,8 +100,10 @@ bool intersectRayWithShape(const Sphere& sphere, Ray& ray, HitInfo& hitInfo)
         else
             t = std::min(t1, t2);
         ray.t = std::min(t, ray.t);
-        if (ray.t == 0)
+        if (ray.t == 0) {
+            ray.t = t; // revert ray.t if no intersection
             return false;
+        }
         hitInfo.normal = glm::normalize(ray.origin + ray.direction * ray.t - sphere.center);
         hitInfo.material = sphere.material;
         return true;
