@@ -3,6 +3,7 @@
 #include <framework/mesh.h>
 #include <framework/ray.h>
 #include <utility> // std::forward
+#include <bvh_interface.h>
 
 // Flag to enable/disable the debug drawing.
 extern bool enableDebugDraw;
@@ -17,8 +18,11 @@ extern bool enableDebugDraw;
 //
 void drawExampleOfCustomVisualDebug();
 
+void drawLine(const glm::vec3 start, const glm::vec3 end, const glm::vec3& color);
+void drawLine(const Ray& ray, const glm::vec3& color);
 void drawRay(const Ray& ray, const glm::vec3& color = glm::vec3(1.0f));
-
+void drawShadowRays(const Ray& ray, const Scene& scene, const BvhInterface& bvh, const Features& features);
+void drawNormal(const Ray& ray, const HitInfo& hitInfo);
 void drawNormals(const Scene& scene, int interpolationLevel);
 
 void drawAABB(const AxisAlignedBox& box, DrawMode drawMode = DrawMode::Filled, const glm::vec3& color = glm::vec3(1.0f), float transparency = 1.0f);
