@@ -67,7 +67,7 @@ bool intersectRayWithTriangle(const glm::vec3& v0, const glm::vec3& v1, const gl
     // ray.t = t;
     // return false;
 
-    // M�ller-Trumbore intersection
+    // Moeller-Trumbore intersection
     const float EPSILON = 0.0000001;
     glm::vec3 edge1 = v1 - v0;
     glm::vec3 edge2 = v2 - v0;
@@ -90,7 +90,7 @@ bool intersectRayWithTriangle(const glm::vec3& v0, const glm::vec3& v1, const gl
     {
         ray.t = t;
         hitInfo.normal = glm::normalize(glm::cross(edge1, edge2));
-        hitInfo.barycentricCoord = glm::vec3(1 - u - v, v, u);
+        hitInfo.barycentricCoord = glm::vec3(1 - u - v, u, v);
         return true;
     } else // This means that there is a line intersection but not a ray intersection.
         return false;
