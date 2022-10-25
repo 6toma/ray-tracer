@@ -17,10 +17,13 @@ glm::vec3 getFinalColor(const Scene& scene, const BvhInterface& bvh, Ray ray, co
         if (features.enableRecursive) {
             Ray reflection = computeReflectionRay(ray, hitInfo);
             // TODO: put your own implementation of recursive ray tracing here.
+            glm::vec3 reflectedColor = computeLightContribution(scene, bvh, features, reflection, hitInfo);
+            reflectedColor += getFinalColor(scene, bvh, reflection, features, rayDepth + 1);
+            Lo += hitInfo.material.ks * reflectedColor;
         }
 
-        // Draw a white debug ray if the ray hits.
-        drawRay(ray, Lo);
+        // Visual debug for shading + recursive ray tracing
+        drawRay(ray, Lo); 
 
         for (const auto& light : scene.lights) {
             if (features.enableHardShadow && std::holds_alternative<PointLight>(light)) {
