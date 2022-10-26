@@ -41,10 +41,10 @@ static void setOpenGLMatrices(const Trackball& camera);
 static void drawLightsOpenGL(const Scene& scene, const Trackball& camera, int selectedLight);
 static void drawSceneOpenGL(const Scene& scene);
 bool sliderIntSquarePower(const char* label, int* v, int v_min, int v_max);
-
 int main(int argc, char** argv)
 {
     Config config = {};
+    MotionBlurSetting motionBlurSetting = {};
     if (argc > 1) {
         config = readConfigFile(argv[1]);
     } else {
@@ -75,6 +75,7 @@ int main(int argc, char** argv)
         bool debugBVHLevel { false };
         bool debugBVHLeaf { false };
         bool debugNormals { false };
+        bool debugMotionBlur { false };
         ViewMode viewMode { ViewMode::Rasterization };
 
         window.registerKeyCallback([&](int key, int /* scancode */, int action, int /* mods */) {
@@ -197,6 +198,13 @@ int main(int argc, char** argv)
                     ImGui::SliderFloat("Focal length", &config.features.extra.focalLength, 0.5, 10);
                     ImGui::SliderFloat("Aperture Radius", &config.features.extra.apertureRadius, 0, 1);
                 }
+                ImGui::Checkbox("Motion Blur", &config.features.extra.enableMotionBlur);
+                if (config.features.extra.enableMotionBlur) {
+                    ImGui::DragFloat3(
+                        "Moving Direction", glm::value_ptr(motionBlurSetting.movingDirection), 0.05f, -1.0f, 1.0f);
+                    ImGui::InputFloat(
+                        "Speed", &motionBlurSetting.speed, 0.5f, 0.5f, "%0.2f");
+                }
             }
             ImGui::Separator();
 
@@ -233,7 +241,6 @@ int main(int argc, char** argv)
                     screen.writeBitmapToFile(outPath);
                 }
             }
-
             ImGui::Spacing();
             ImGui::Separator();
             ImGui::Text("Debugging");
@@ -247,6 +254,7 @@ int main(int argc, char** argv)
                 ImGui::Checkbox("Draw normals", &debugNormals);
                 if (debugNormals)
                     ImGui::SliderInt("Normal interpolation level", &normalDebugLevel, 0, 2);
+                ImGui::Checkbox("Draw Motion", &debugMotionBlur);
             }
 
             ImGui::Spacing();
@@ -385,6 +393,14 @@ int main(int argc, char** argv)
                     glDisable(GL_LIGHTING);
                     glDepthFunc(GL_LEQUAL);
                     drawNormals(scene, normalDebugLevel);
+                    enableDebugDraw = false;
+                }
+                if (debugMotionBlur) {
+                    enableDebugDraw = true;
+                    glDisable(GL_LIGHTING);
+                    glDepthFunc(GL_LEQUAL);
+                    glm::vec3 length = motionBlurSetting.speed * glm::normalize(motionBlurSetting.movingDirection);
+                    drawLine(glm::vec3 { 0.0f }, length, glm::vec3 {1.0f});
                     enableDebugDraw = false;
                 }
                 glPopAttrib();

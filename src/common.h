@@ -87,3 +87,7 @@ struct Features {
 
     ExtraFeatures extra = {};
 };
+struct MotionBlurSetting {
+    glm::vec3 movingDirection { 0.0f };
+    float speed = 0;
+};
