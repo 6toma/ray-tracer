@@ -13,7 +13,7 @@
 MotionBlurSetting motionBlurSetting {};
 
 static const std::filesystem::path dataDirPath { DATA_DIR };
-Image img(dataDirPath / "default.png");
+Image img(dataDirPath / "env.jpg");
 glm::vec3 getFinalColor(const Scene& scene, const BvhInterface& bvh, Ray ray, const Features& features, int rayDepth)
 {
     HitInfo hitInfo;
@@ -45,10 +45,14 @@ glm::vec3 getFinalColor(const Scene& scene, const BvhInterface& bvh, Ray ray, co
     } else {
         // Draw a red debug ray if the ray missed.
 
-        drawRay(ray, glm::vec3(1.0f, 0.0f, 0.0f));
+        
         // Set the color of the pixel to black if the ray misses.
-
-        return acquireTexelEnvironment(img,ray.direction,features);
+        glm::vec3 defaultcolor = acquireTexelEnvironment(img, ray.direction, features);
+        if (features.extra.enableEnvironmentMapping)
+            drawRay(ray, defaultcolor);
+        else
+            drawRay(ray, glm::vec3(1.0f, 0.0f, 0.0f));
+        return defaultcolor;
     }
 }
 
