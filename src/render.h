@@ -5,6 +5,7 @@ DISABLE_WARNINGS_PUSH()
 #include <glm/vec3.hpp>
 DISABLE_WARNINGS_POP()
 #include <framework/ray.h>
+#include <common.h>
 
 // Forward declarations.
 struct Scene;
@@ -18,3 +19,8 @@ void renderRayTracing(const Scene& scene, const Trackball& camera, const BvhInte
 
 // Get the color of a ray.
 glm::vec3 getFinalColor(const Scene& scene, const BvhInterface& bvh, Ray ray, const Features& features, int rayDepth = 0);
+
+glm::vec3 DOFColor(
+    const Scene& scene, const BvhInterface& bvh, const Plane& focalPlane, const Ray& cameraRay,
+    const Features& features, const glm::mat2x3& apertureBasis
+);

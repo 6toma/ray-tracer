@@ -64,6 +64,8 @@ int main(int argc, char** argv)
 
         SceneType sceneType { SceneType::SingleTriangle };
         std::optional<Ray> optDebugRay;
+        Plane focalPlane;
+        glm::mat2x3 apertureBasis;
         Scene scene = loadScenePrebuilt(sceneType, config.dataPath);
         BvhInterface bvh { &scene };
 
@@ -81,7 +83,23 @@ int main(int argc, char** argv)
                 case GLFW_KEY_R: {
                     // Shoot a ray. Produce a ray from camera to the far plane.
                     const auto tmp = window.getNormalizedCursorPos();
-                        optDebugRay = camera.generateRay(tmp * 2.0f - 1.0f);
+                    optDebugRay = camera.generateRay(tmp * 2.0f - 1.0f);
+
+                    focalPlane = {
+                        glm::dot(
+                            camera.position() + camera.forward() * glm::vec3(config.features.extra.focalLength),
+                            camera.forward()
+                        ),
+                        camera.forward(),
+                    };
+
+                    glm::vec3 apertureX = (camera.forward() == glm::vec3(1, 0, 0))
+                        ? glm::normalize(glm::cross(camera.forward(), glm::vec3(0, 0, 1)))
+                        : glm::normalize(glm::cross(camera.forward(), glm::vec3(1, 0, 0)));
+
+                    glm::vec3 apertureY = glm::cross(camera.forward(), apertureX);
+
+                    apertureBasis = glm::mat2x3(apertureX, apertureY);
                 } break;
                 case GLFW_KEY_A: {
                     debugBVHLeafId++;
@@ -135,16 +153,33 @@ int main(int argc, char** argv)
             ImGui::Separator();
             if (ImGui::CollapsingHeader("Features", ImGuiTreeNodeFlags_DefaultOpen)) {
                 ImGui::Checkbox("Shading", &config.features.enableShading);
-                ImGui::Checkbox("Recursive(reflections)", &config.features.enableRecursive);
+
+                ImGui::Checkbox("Recursive (reflections)", &config.features.enableRecursive);
+                if (config.features.enableRecursive)
+                    ImGui::SliderInt("Samples per segment light", &config.features.samplesParallel, 0, 50);
+
                 ImGui::Checkbox("Hard shadows", &config.features.enableHardShadow);
+
                 ImGui::Checkbox("Soft shadows", &config.features.enableSoftShadow);
+                if (config.features.enableSoftShadow) {
+                    ImGui::Checkbox("Scale samples by light size", &config.features.dynamicSamples);
+                    ImGui::SliderInt(
+                        "Samples per segment light", &config.features.samplesSegment, 10, 10000, "%d",
+                        ImGuiSliderFlags_Logarithmic
+                    );
+                    ImGui::SliderInt(
+                        "Samples per area light", &config.features.samplesParallel, 10, 10000, "%d",
+                        ImGuiSliderFlags_Logarithmic
+                    );
+                }
+
                 ImGui::Checkbox("BVH", &config.features.enableAccelStructure);
                 ImGui::Checkbox("Texture mapping", &config.features.enableTextureMapping);
                 ImGui::Checkbox("Normal interpolation", &config.features.enableNormalInterp);
             }
             ImGui::Separator();
 
-            if (ImGui::CollapsingHeader("Extra Features")) {
+            if (ImGui::CollapsingHeader("Extra Features", ImGuiTreeNodeFlags_DefaultOpen)) {
                 ImGui::Checkbox("Environment mapping", &config.features.extra.enableEnvironmentMapping);
                 ImGui::Checkbox("BVH SAH binning", &config.features.extra.enableBvhSahBinning);
                 ImGui::Checkbox("Bloom effect", &config.features.extra.enableBloomEffect);
@@ -152,11 +187,20 @@ int main(int argc, char** argv)
                 ImGui::Checkbox("Texture filtering(mipmapping)", &config.features.extra.enableMipmapTextureFiltering);
                 ImGui::Checkbox("Glossy reflections", &config.features.extra.enableGlossyReflection);
                 ImGui::Checkbox("Transparency", &config.features.extra.enableTransparency);
+
                 ImGui::Checkbox("Depth of field", &config.features.extra.enableDepthOfField);
+                if (config.features.extra.enableDepthOfField) {
+                    ImGui::SliderInt(
+                        "Depth of field samples", &config.features.extra.DOFSamples, 10, 1000, "%d",
+                        ImGuiSliderFlags_Logarithmic
+                    );
+                    ImGui::SliderFloat("Focal length", &config.features.extra.focalLength, 0.5, 10);
+                    ImGui::SliderFloat("Aperture Radius", &config.features.extra.apertureRadius, 0, 1);
+                }
             }
             ImGui::Separator();
 
-            if (ImGui::TreeNode("Camera(read only)")) {
+            if (ImGui::TreeNode("Camera (read only)")) {
                 auto lookAt = camera.lookAt();
                 auto position = camera.position();
                 auto rotation = glm::degrees(camera.rotationEulerAngles());
@@ -329,7 +373,11 @@ int main(int argc, char** argv)
                     enableDebugDraw = true;
                     glDisable(GL_LIGHTING);
                     glDepthFunc(GL_LEQUAL);
-                    (void)getFinalColor(scene, bvh, *optDebugRay, config.features);
+
+                    if (config.features.extra.enableDepthOfField)
+                        drawDOF(scene, bvh, focalPlane, *optDebugRay, config.features, apertureBasis);
+                    else
+                        getFinalColor(scene, bvh, *optDebugRay, config.features);
                     enableDebugDraw = false;
                 }
                 if (debugNormals) {
