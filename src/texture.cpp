@@ -15,8 +15,8 @@ glm::vec3 acquireTexelEnvironment(const Image& image, const glm::vec3& direction
     float PI = 3.14159265358979323846;
     if (!features.extra.enableEnvironmentMapping)
         return glm::vec3 { 0.0 };
-    float u = std::atan2(direction.y , direction.x) / 2/PI + 0.5;
-    float v = std::asin(direction.z) / PI + 0.5;
+    float v = std::atan2(direction.y , direction.x) / 2/PI + 0.5;
+    float u = std::asin(direction.z) / PI + 0.5;
     int j = floor(u * (image.width - 1) + 0.5);
     int i = image.height  - floor(v * (image.height - 1) + 0.5);
     return image.pixels[i * image.width + j];
