@@ -249,6 +249,7 @@ void drawShadowRays(const Ray& ray, const Scene& scene, const BvhInterface& bvh,
         return;
 
     HitInfo hitInfo;
+    uint64_t rand_state[4] { ray.origin.x * 1000, ray.origin.y * 1000, ray.direction.x * 1000, ray.direction.z * 1000 };
 
     for (const auto& light : scene.lights) {
         if (std::holds_alternative<PointLight>(light)) {
@@ -270,7 +271,9 @@ void drawShadowRays(const Ray& ray, const Scene& scene, const BvhInterface& bvh,
             glm::vec3 lightPosition, lightColor;
             int numSamples = glm::length(segmentLight.endpoint0 - segmentLight.endpoint1) * 100000;
             for (int i = 0; i < numSamples; i++) {
-                sampleSegmentLight(segmentLight, lightPosition, lightColor);
+                float t = to_double(next_rand(rand_state));
+                lightPosition = segmentLight.endpoint0 * t + segmentLight.endpoint1 * (1 - t);
+                lightColor = segmentLight.color0 * t + segmentLight.color1 * (1 - t);
 
                 glm::vec3 offset = glm::normalize(lightPosition - pos) * glm::vec3(0.000001);
                 Ray lightRay { pos + offset, lightPosition - pos - offset, 1 };
@@ -288,7 +291,13 @@ void drawShadowRays(const Ray& ray, const Scene& scene, const BvhInterface& bvh,
             glm::vec3 lightPosition, lightColor;
             int numSamples = glm::length(glm::cross(parallelogramLight.edge01, parallelogramLight.edge02)) * 1000;
             for (int i = 0; i < numSamples; i++) {
-                sampleParallelogramLight(parallelogramLight, lightPosition, lightColor);
+                float x = to_double(next_rand(rand_state));
+                float y = to_double(next_rand(rand_state));
+                // float x = dis(gen);
+                // float y = dis(gen);
+                lightPosition = parallelogramLight.v0 + parallelogramLight.edge01 * x + parallelogramLight.edge02 * y;
+                lightColor = parallelogramLight.color0 * x * y + parallelogramLight.color1 * (1 - x) * y
+                    + parallelogramLight.color2 * x * (1 - y) + parallelogramLight.color3 * (1 - x) * (1 - y);
 
                 glm::vec3 offset = glm::normalize(lightPosition - pos) * glm::vec3(0.000001);
                 Ray lightRay { pos + offset, lightPosition - pos - offset, 1 };
