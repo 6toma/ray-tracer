@@ -84,6 +84,28 @@ void renderRayTracing(
                 pixelColor = getFinalColor(scene, bvh, cameraRay, features);
 
             screen.setPixel(x, y, pixelColor);
+            const glm::vec2 normalizedPixelPos { float(x) / float(windowResolution.x) * 2.0f - 1.0f,
+                float(y) / float(windowResolution.y) * 2.0f - 1.0f };
+            Ray cameraRay = camera.generateRay(normalizedPixelPos);
+            if (features.extra.enableMotionBlur) {
+                int sampleAmount = 200;
+                glm::vec3 color { 0.0f };
+                float cof = 1.0 / (float)(sampleAmount);
+                for (int i = 0; i < sampleAmount; i++) {
+                    float r = -static_cast<float>(rand()) / static_cast<float>(RAND_MAX) * motionBlurSetting.speed;
+                    glm::vec3 offset = motionBlurSetting.movingDirection * r;
+                    cameraRay.origin += offset;
+                    color += getFinalColor(scene, bvh, cameraRay, features);
+                    cameraRay.origin -= offset;
+
+                }
+                screen.setPixel(x, y, color * cof);
+            }
+            else screen.setPixel(x, y, getFinalColor(scene, bvh, cameraRay, features));
+            //i++;
+            //std::cout << i * 100 / (windowResolution.y * windowResolution.x) << "% - Rendered " << i << " out of "
+            //          << windowResolution.y * windowResolution.x
+            //          << "pixels                                                             \r" << std::flush;
         }
     }
 }

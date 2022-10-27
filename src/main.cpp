@@ -44,7 +44,6 @@ bool sliderIntSquarePower(const char* label, int* v, int v_min, int v_max);
 int main(int argc, char** argv)
 {
     Config config = {};
-    MotionBlurSetting motionBlurSetting = {};
     if (argc > 1) {
         config = readConfigFile(argv[1]);
     } else {
@@ -399,7 +398,7 @@ int main(int argc, char** argv)
                     enableDebugDraw = true;
                     glDisable(GL_LIGHTING);
                     glDepthFunc(GL_LEQUAL);
-                    glm::vec3 length = motionBlurSetting.speed * glm::normalize(motionBlurSetting.movingDirection);
+                    glm::vec3 length = 10*motionBlurSetting.speed * glm::normalize(motionBlurSetting.movingDirection);
                     drawLine(glm::vec3 { 0.0f }, length, glm::vec3 {1.0f});
                     enableDebugDraw = false;
                 }
