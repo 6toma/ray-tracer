@@ -13,7 +13,7 @@
 MotionBlurSetting motionBlurSetting {};
 
 static const std::filesystem::path dataDirPath { DATA_DIR };
-Image img(dataDirPath / "env.jpg");
+Image img(dataDirPath / "lake.png");
 glm::vec3 getFinalColor(const Scene& scene, const BvhInterface& bvh, Ray ray, const Features& features, int rayDepth)
 {
     HitInfo hitInfo;
