@@ -1,5 +1,6 @@
 #include "light.h"
 #include "config.h"
+#include "rand_utils.h"
 // Suppress warnings in third-party code.
 #include <framework/disable_all_warnings.h>
 DISABLE_WARNINGS_PUSH()
@@ -8,52 +9,12 @@ DISABLE_WARNINGS_POP()
 #include <cmath>
 #include <random>
 
-std::random_device rd;
-std::minstd_rand gen(rd());
-std::uniform_real_distribution<> dis(0, 1);
-
-static inline uint64_t rotl(const uint64_t x, int k) { return (x << k) | (x >> (64 - k)); }
- 
-static inline double to_double(uint64_t x)
-{
-    const union {
-        uint64_t i;
-        double d;
-    } u = { .i = UINT64_C(0x3FF) << 52 | x >> 12 };
-    return u.d - 1.0;
-}
-
-// seed, randomly generated with a d10
-uint64_t shuffle_table[4] {
-  4550963226,
-  4884,
-  2,
-  724
-};
-uint64_t next_rand(void)
-{
-    const uint64_t result = rotl(shuffle_table[1] * 5, 7) * 9;
-
-    const uint64_t t = shuffle_table[1] << 17;
-
-    shuffle_table[2] ^= shuffle_table[0];
-    shuffle_table[3] ^= shuffle_table[1];
-    shuffle_table[1] ^= shuffle_table[2];
-    shuffle_table[0] ^= shuffle_table[3];
-
-    shuffle_table[2] ^= t;
-
-    shuffle_table[3] = rotl(shuffle_table[3], 45);
-
-    return result;
-}
-
 // samples a segment light source
 // you should fill in the vectors position and color with the sampled position and color
 void sampleSegmentLight(const SegmentLight& segmentLight, glm::vec3& position, glm::vec3& color)
 {
     float t = to_double(next_rand());
-    //float t = dis(gen);
+    // float t = dis(gen);
     position = segmentLight.endpoint0 * t + segmentLight.endpoint1 * (1 - t);
     color = segmentLight.color0 * t + segmentLight.color1 * (1 - t);
 }
@@ -64,8 +25,8 @@ void sampleParallelogramLight(const ParallelogramLight& parallelogramLight, glm:
 {
     float x = to_double(next_rand());
     float y = to_double(next_rand());
-    //float x = dis(gen);
-    //float y = dis(gen);
+    // float x = dis(gen);
+    // float y = dis(gen);
     position = parallelogramLight.v0 + parallelogramLight.edge01 * x + parallelogramLight.edge02 * y;
     color = parallelogramLight.color0 * x * y + parallelogramLight.color1 * (1 - x) * y
         + parallelogramLight.color2 * x * (1 - y) + parallelogramLight.color3 * (1 - x) * (1 - y);
@@ -73,8 +34,10 @@ void sampleParallelogramLight(const ParallelogramLight& parallelogramLight, glm:
 
 // test the visibility at a given light sample
 // returns 1.0 if sample is visible, 0.0 otherwise
-float testVisibilityLightSample(const glm::vec3& samplePos, const glm::vec3& debugColor, const BvhInterface& bvh,
-    const Features& features, Ray ray, HitInfo hitInfo)
+float testVisibilityLightSample(
+    const glm::vec3& samplePos, const glm::vec3& debugColor, const BvhInterface& bvh, const Features& features, Ray ray,
+    HitInfo hitInfo
+)
 {
     glm::vec3 pos = ray.origin + ray.direction * ray.t;
     glm::vec3 offset = glm::normalize(samplePos - pos) * glm::vec3(0.000001);
@@ -119,7 +82,8 @@ float testVisibilityLightSample(const glm::vec3& samplePos, const glm::vec3& deb
 // You can add the light sources programmatically by creating a custom scene (modify the Custom case in the
 // loadScene function in scene.cpp). Custom lights will not be visible in rasterization view.
 glm::vec3 computeLightContribution(
-    const Scene& scene, const BvhInterface& bvh, const Features& features, Ray ray, HitInfo hitInfo)
+    const Scene& scene, const BvhInterface& bvh, const Features& features, Ray ray, HitInfo hitInfo
+)
 {
     /*if (!bvh.intersect(ray, hitInfo, features))
         return glm::vec3 { 0, 0, 0 };*/
@@ -142,8 +106,9 @@ glm::vec3 computeLightContribution(
                 const SegmentLight segmentLight = std::get<SegmentLight>(light);
 
                 glm::vec3 lightPosition, lightColor;
-                int numSamples = glm::length(segmentLight.endpoint0 - segmentLight.endpoint1) * 100000;
-                //int numSamples = 100000;
+                int numSamples
+                    = (features.dynamicSamples ? glm::length(segmentLight.endpoint0 - segmentLight.endpoint1) : 1)
+                    * features.samplesSegment;
                 totalSamples += numSamples;
                 for (int i = 0; i < numSamples; i++) {
                     sampleSegmentLight(segmentLight, lightPosition, lightColor);
@@ -155,8 +120,10 @@ glm::vec3 computeLightContribution(
                 const ParallelogramLight parallelogramLight = std::get<ParallelogramLight>(light);
 
                 glm::vec3 lightPosition, lightColor;
-                int numSamples = glm::length(glm::cross(parallelogramLight.edge01, parallelogramLight.edge02)) * 1000;
-                //int numSamples = 100000;
+                int numSamples = (features.dynamicSamples
+                                      ? glm::length(glm::cross(parallelogramLight.edge01, parallelogramLight.edge02))
+                                      : 1)
+                    * features.samplesParallel;
                 totalSamples += numSamples;
                 for (int i = 0; i < numSamples; i++) {
                     sampleParallelogramLight(parallelogramLight, lightPosition, lightColor);

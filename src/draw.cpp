@@ -24,6 +24,9 @@ DISABLE_WARNINGS_POP()
 #include <algorithm>
 #include <bvh_interface.h>
 #include <light.h>
+#include <rand_utils.h>
+#include <numbers>
+#include <render.h>
 
 bool enableDebugDraw = false;
 
@@ -329,7 +332,7 @@ void drawNormals(const Scene& scene, int interpolationLevel)
                 glm::vec3 interNormal = interpolateNormal(normals[0], normals[1], normals[2], glm::vec3(1.0 / 3.0));
                 glm::vec3 interPos
                     = (mesh.vertices[triangleIndex[0]].position + mesh.vertices[triangleIndex[1]].position
-                          + mesh.vertices[triangleIndex[2]].position)
+                       + mesh.vertices[triangleIndex[2]].position)
                     / glm::vec3(3);
 
                 drawLine(Ray { interPos, interNormal, 0.1 }, glm::abs(interNormal));
@@ -377,5 +380,45 @@ void drawNormals(const Scene& scene, int interpolationLevel)
                 drawLine(Ray { interPos, interNormal, 0.1 }, glm::abs(interNormal));
             }
         }
+    }
+}
+
+void drawDOF(
+    const Scene& scene, const BvhInterface& bvh, const Plane& focalPlane,
+    const Ray& cameraRay, const Features& features, const glm::mat2x3& apertureBasis
+)
+{
+    if (!enableDebugDraw)
+        return;
+
+    uint64_t rand_state[4] { 4550963226, 4884, 2, 724 };
+    glm::vec3 point = cameraRay.origin;
+    int circleRes = 20;
+    for (int i = 0; i < circleRes; i++) {
+        float theta1 = 2 * std::numbers::pi * i / circleRes;
+        float theta2 = 2 * std::numbers::pi * (i + 1) / circleRes;
+        glm::vec3 p1
+            = cameraRay.origin + features.extra.apertureRadius * apertureBasis * glm::vec2(cos(theta1), sin(theta1));
+        glm::vec3 p2
+            = cameraRay.origin + features.extra.apertureRadius * apertureBasis * glm::vec2(cos(theta2), sin(theta2));
+        drawLine(p1, p2, glm::abs(glm::normalize(p2 - p1)));
+    }
+    
+    float t = (focalPlane.D - glm::dot(focalPlane.normal, cameraRay.origin))
+        / glm::dot(focalPlane.normal, cameraRay.direction);
+
+    glm::vec3 pixelColor(0);
+    for (int i = 0; i < features.extra.DOFSamples; i++) {
+        float theta = to_double(next_rand(rand_state)) * 2 * std::numbers::pi;
+        float r = std::sqrt(to_double(next_rand(rand_state)));
+        glm::vec2 offset = glm::vec2(cos(theta), sin(theta)) * r * features.extra.apertureRadius;
+
+        const Ray DOFRay {
+            cameraRay.origin + apertureBasis * offset,
+            glm::normalize((cameraRay.direction * t) - apertureBasis * offset),
+            std::numeric_limits<float>::max(),
+        };
+
+        getFinalColor(scene, bvh, DOFRay, features);
     }
 }

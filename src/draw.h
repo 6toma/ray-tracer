@@ -4,6 +4,7 @@
 #include <framework/ray.h>
 #include <utility> // std::forward
 #include <bvh_interface.h>
+#include <glm/mat2x3.hpp>
 
 // Flag to enable/disable the debug drawing.
 extern bool enableDebugDraw;
@@ -24,6 +25,10 @@ void drawRay(const Ray& ray, const glm::vec3& color = glm::vec3(1.0f));
 void drawShadowRays(const Ray& ray, const Scene& scene, const BvhInterface& bvh, const Features& features);
 void drawNormal(const Ray& ray, const HitInfo& hitInfo);
 void drawNormals(const Scene& scene, int interpolationLevel);
+void drawDOF(
+    const Scene& scene, const BvhInterface& bvh, const Plane& focalPlane, const Ray& cameraRay,
+    const Features& features, const glm::mat2x3& apertureBasis
+);
 
 void drawAABB(const AxisAlignedBox& box, DrawMode drawMode = DrawMode::Filled, const glm::vec3& color = glm::vec3(1.0f), float transparency = 1.0f);
 
