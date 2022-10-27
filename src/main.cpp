@@ -203,7 +203,7 @@ int main(int argc, char** argv)
                     ImGui::DragFloat3(
                         "Moving Direction", glm::value_ptr(motionBlurSetting.movingDirection), 0.05f, -1.0f, 1.0f);
                     ImGui::InputFloat(
-                        "Speed", &motionBlurSetting.speed, 0.5f, 0.5f, "%0.2f");
+                        "Speed", &motionBlurSetting.speed, 0.01f, 0.01f, "%0.2f");
                 }
             }
             ImGui::Separator();
