@@ -1,5 +1,6 @@
 #include "texture.h"
 #include <framework/image.h>
+#include<numbers>
 static const std::filesystem::path dataDirPath { DATA_DIR };
 glm::vec3 acquireTexel(const Image& image, const glm::vec2& texCoord, const Features& features)
 {
@@ -12,7 +13,7 @@ glm::vec3 acquireTexel(const Image& image, const glm::vec2& texCoord, const Feat
 }
 glm::vec3 acquireTexelEnvironment(const Image& image, const glm::vec3& direction, const Features& features)
 {
-    float PI = 3.14159265358979323846;
+    float PI = std::numbers::pi;
     if (!features.extra.enableEnvironmentMapping)
         return glm::vec3 { 0.0 };
     float v = std::atan2(direction.y , direction.x) / 2/PI + 0.5;
