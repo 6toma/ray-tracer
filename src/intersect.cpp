@@ -10,7 +10,8 @@ DISABLE_WARNINGS_POP()
 #include <cmath>
 #include <limits>
 
-bool pointInTriangle(const glm::vec3& v0, const glm::vec3& v1, const glm::vec3& v2, const glm::vec3& n, const glm::vec3& p)
+bool pointInTriangle(
+    const glm::vec3& v0, const glm::vec3& v1, const glm::vec3& v2, const glm::vec3& n, const glm::vec3& p)
 {
     glm::vec3 ab = glm::cross(n, v1 - v0);
     glm::vec3 bc = glm::cross(n, v2 - v1);
@@ -35,7 +36,8 @@ bool pointInTriangle(const glm::vec3& v0, const glm::vec3& v1, const glm::vec3& 
 bool intersectRayWithPlane(const Plane& plane, Ray& ray)
 {
     if ((glm::dot(ray.direction, plane.normal) < 0 && glm::dot(plane.D * plane.normal - ray.origin, plane.normal) < 0)
-        || (glm::dot(ray.direction, plane.normal) > 0 && glm::dot(plane.D * plane.normal - ray.origin, plane.normal) > 0)) {
+        || (glm::dot(ray.direction, plane.normal) > 0
+            && glm::dot(plane.D * plane.normal - ray.origin, plane.normal) > 0)) {
         ray.t = (plane.D - glm::dot(plane.normal, ray.origin)) / glm::dot(plane.normal, ray.direction);
         return true;
     }
@@ -53,17 +55,45 @@ Plane trianglePlane(const glm::vec3& v0, const glm::vec3& v1, const glm::vec3& v
 /// Output: if intersects then modify the hit parameter ray.t and return true, otherwise return false
 bool intersectRayWithTriangle(const glm::vec3& v0, const glm::vec3& v1, const glm::vec3& v2, Ray& ray, HitInfo& hitInfo)
 {
-    float t = ray.t;
-    glm::vec3 normal = glm::normalize(glm::cross(v0 - v1, v0 - v2));
-    if (intersectRayWithPlane(trianglePlane(v0, v1, v2), ray)
-        && pointInTriangle(v0, v1, v2, normal, ray.origin + ray.direction * ray.t) && ray.t < t) {
-        hitInfo.normal = normal;
-        hitInfo.barycentricCoord = computeBarycentricCoord(v0, v1, v2, ray.origin + ray.direction * ray.t);
-        return true;
-    }
+    // float t = ray.t;
+    // glm::vec3 normal = glm::normalize(glm::cross(v0 - v1, v0 - v2));
+    // if (intersectRayWithPlane(trianglePlane(v0, v1, v2), ray)
+    //     && pointInTriangle(v0, v1, v2, normal, ray.origin + ray.direction * ray.t) && ray.t < t) {
+    //     hitInfo.barycentricCoord = computeBarycentricCoord(v0, v1, v2, ray.origin + ray.direction * ray.t);
+    //     hitInfo.normal = normal;
+    //     return true;
+    // }
 
-    ray.t = t;
-    return false;
+    // ray.t = t;
+    // return false;
+
+    // Moeller-Trumbore intersection
+    const float EPSILON = 0.0000001;
+    glm::vec3 edge1 = v1 - v0;
+    glm::vec3 edge2 = v2 - v0;
+    glm::vec3 h = glm::cross(ray.direction, edge2);
+    float a = glm::dot(edge1, h);
+    if (a > -EPSILON && a < EPSILON)
+        return false; // This ray is parallel to this triangle.
+    glm::vec3 s = ray.origin - v0;
+    float f = 1.0 / a;
+    float u = f * glm::dot(s, h);
+    if (u < 0.0 || u > 1.0)
+        return false;
+    glm::vec3 q = glm::cross(s, edge1);
+    float v = f * glm::dot(ray.direction, q);
+    if (v < 0.0 || u + v > 1.0)
+        return false;
+    // At this stage we can compute t to find out where the intersection point is on the line.
+    float t = f * glm::dot(edge2, q);
+    if (t > EPSILON && t < ray.t) // ray intersection
+    {
+        ray.t = t;
+        hitInfo.normal = glm::normalize(glm::cross(edge1, edge2));
+        hitInfo.barycentricCoord = glm::vec3(1 - u - v, u, v);
+        return true;
+    } else // This means that there is a line intersection but not a ray intersection.
+        return false;
 }
 
 /// Input: a sphere with the following attributes: sphere.radius, sphere.center
@@ -110,8 +140,9 @@ bool intersectRayWithShape(const Sphere& sphere, Ray& ray, HitInfo& hitInfo)
     }
 }
 
-/// Input: an axis-aligned bounding box with the following parameters: minimum coordinates box.lower and maximum coordinates box.upper
-/// Output: if intersects then modify the hit parameter ray.t and return true, otherwise return false
+/// Input: an axis-aligned bounding box with the following parameters: minimum coordinates box.lower and maximum
+/// coordinates box.upper Output: if intersects then modify the hit parameter ray.t and return true, otherwise return
+/// false
 bool intersectRayWithShape(const AxisAlignedBox& box, Ray& ray)
 {
     float txmin = (box.lower.x - ray.origin.x) / ray.direction.x;

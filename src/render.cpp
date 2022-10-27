@@ -6,6 +6,7 @@
 #ifdef NDEBUG
 #include <omp.h>
 #endif
+#include <iostream>
 
 glm::vec3 getFinalColor(const Scene& scene, const BvhInterface& bvh, Ray ray, const Features& features, int rayDepth)
 {
@@ -25,38 +26,15 @@ glm::vec3 getFinalColor(const Scene& scene, const BvhInterface& bvh, Ray ray, co
         // Visual debug for shading + recursive ray tracing
         drawRay(ray, Lo); 
 
-        for (const auto& light : scene.lights) {
-            if (features.enableHardShadow && std::holds_alternative<PointLight>(light)) {
-                const PointLight pointLight = std::get<PointLight>(light);
-                glm::vec3 pos = ray.origin + ray.direction * ray.t;
-                Ray lightRay { pos + (pointLight.position - pos) * glm::vec3(0.000001),
-                    (pointLight.position - pos) * glm::vec3(0.999999),
-                    1 };
-                if (bvh.intersect(lightRay, hitInfo, features)
-                    && lightRay.t < 1) {
-                    drawRay(lightRay, glm::vec3(1, 0, 0));
-                } else {
-                    lightRay.t = 1;
-                    drawRay(lightRay, glm::vec3(0, 1, 0));
-                }
+        drawNormal(ray, hitInfo);
 
-            } else if (std::holds_alternative<SegmentLight>(light)) {
+        // Draw shadow rays
+        if (features.enableHardShadow)
+            drawShadowRays(ray, scene, bvh, features);
 
-                const SegmentLight segmentLight = std::get<SegmentLight>(light);
-                glm::vec3 lightPosition, lightColor;
-                sampleSegmentLight(segmentLight, lightPosition, lightColor);
-                //shading += computeShading(lightPosition, lightColor, features, ray, hitInfo);
-
-            } else if (std::holds_alternative<ParallelogramLight>(light)) {
-
-                const ParallelogramLight parallelogramLight = std::get<ParallelogramLight>(light);
-                glm::vec3 lightPosition, lightColor;
-                sampleParallelogramLight(parallelogramLight, lightPosition, lightColor);
-                //shading += computeShading(lightPosition, lightColor, features, ray, hitInfo);
-            }
-        }
-
-        // Set the color of the pixel to white if the ray hits.
+        // Set the color of the pixel if the ray hits.
+        //return glm::abs(hitInfo.normal);
+        //return glm::abs(hitInfo.barycentricCoords);
         return Lo;
     } else {
         // Draw a red debug ray if the ray missed.
@@ -66,9 +44,11 @@ glm::vec3 getFinalColor(const Scene& scene, const BvhInterface& bvh, Ray ray, co
     }
 }
 
-void renderRayTracing(const Scene& scene, const Trackball& camera, const BvhInterface& bvh, Screen& screen, const Features& features)
+void renderRayTracing(
+    const Scene& scene, const Trackball& camera, const BvhInterface& bvh, Screen& screen, const Features& features)
 {
     glm::ivec2 windowResolution = screen.resolution();
+    //int i = 0;
     // Enable multi threading in Release mode
 #ifdef NDEBUG
 #pragma omp parallel for schedule(guided)
@@ -76,12 +56,14 @@ void renderRayTracing(const Scene& scene, const Trackball& camera, const BvhInte
     for (int y = 0; y < windowResolution.y; y++) {
         for (int x = 0; x != windowResolution.x; x++) {
             // NOTE: (-1, -1) at the bottom left of the screen, (+1, +1) at the top right of the screen.
-            const glm::vec2 normalizedPixelPos {
-                float(x) / float(windowResolution.x) * 2.0f - 1.0f,
-                float(y) / float(windowResolution.y) * 2.0f - 1.0f
-            };
+            const glm::vec2 normalizedPixelPos { float(x) / float(windowResolution.x) * 2.0f - 1.0f,
+                float(y) / float(windowResolution.y) * 2.0f - 1.0f };
             const Ray cameraRay = camera.generateRay(normalizedPixelPos);
             screen.setPixel(x, y, getFinalColor(scene, bvh, cameraRay, features));
+            //i++;
+            //std::cout << i * 100 / (windowResolution.y * windowResolution.x) << "% - Rendered " << i << " out of "
+            //          << windowResolution.y * windowResolution.x
+            //          << "pixels                                                             \r" << std::flush;
         }
     }
 }
