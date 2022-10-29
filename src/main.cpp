@@ -156,7 +156,7 @@ int main(int argc, char** argv)
 
                 ImGui::Checkbox("Recursive (reflections)", &config.features.enableRecursive);
                 if (config.features.enableRecursive)
-                    ImGui::SliderInt("Samples per segment light", &config.features.samplesParallel, 0, 50);
+                    ImGui::SliderInt("Max depth", &config.features.maxRayDepth, 0, 50);
 
                 ImGui::Checkbox("Hard shadows", &config.features.enableHardShadow);
 
@@ -186,6 +186,11 @@ int main(int argc, char** argv)
                 ImGui::Checkbox("Texture filtering(bilinear interpolation)", &config.features.extra.enableBilinearTextureFiltering);
                 ImGui::Checkbox("Texture filtering(mipmapping)", &config.features.extra.enableMipmapTextureFiltering);
                 ImGui::Checkbox("Glossy reflections", &config.features.extra.enableGlossyReflection);
+                if (config.features.extra.enableGlossyReflection)
+                    ImGui::SliderInt(
+                        "Glossy samples", &config.features.extra.glossySamples, 10, 1000, "%d",
+                        ImGuiSliderFlags_Logarithmic
+                    );
                 ImGui::Checkbox("Transparency", &config.features.extra.enableTransparency);
 
                 ImGui::Checkbox("Depth of field", &config.features.extra.enableDepthOfField);
@@ -244,7 +249,8 @@ int main(int argc, char** argv)
                 ImGui::Checkbox("Draw BVH Leaf", &debugBVHLeaf);
                 if (debugBVHLeaf)
                     ImGui::SliderInt("BVH Leaf", &bvhDebugLeaf, 1, bvh.numLeaves());
-                ImGui::Checkbox("Draw normals", &debugNormals);
+                ImGui::Checkbox("Draw hit normals", &config.features.debug.drawHitNormal);
+                ImGui::Checkbox("Draw mesh normals", &debugNormals);
                 if (debugNormals)
                     ImGui::SliderInt("Normal interpolation level", &normalDebugLevel, 0, 2);
             }

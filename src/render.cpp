@@ -15,20 +15,88 @@ glm::vec3 getFinalColor(const Scene& scene, const BvhInterface& bvh, Ray ray, co
     HitInfo hitInfo;
     if (bvh.intersect(ray, hitInfo, features)) {
 
+        uint64_t rand_state[4] {
+            ray.origin.x * 1000,
+            ray.origin.y * 1000,
+            ray.direction.x * 1000,
+            rayDepth * 1000,
+        };
+
         glm::vec3 Lo = computeLightContribution(scene, bvh, features, ray, hitInfo);
 
         if (features.enableRecursive && rayDepth < features.maxRayDepth && hitInfo.material.ks != glm::vec3(0)) {
             Ray reflection = computeReflectionRay(ray, hitInfo);
-            // TODO: put your own implementation of recursive ray tracing here.
-            glm::vec3 reflectedColor = computeLightContribution(scene, bvh, features, reflection, hitInfo);
-            reflectedColor += getFinalColor(scene, bvh, reflection, features, rayDepth + 1);
+            glm::vec3 reflectedColor(0);
+
+            if (features.extra.enableGlossyReflection) {
+                glm::vec3 reflectionX = (reflection.direction == glm::vec3(1, 0, 0))
+                    ? glm::normalize(glm::cross(reflection.direction, glm::vec3(0, 0, 1)))
+                    : glm::normalize(glm::cross(reflection.direction, glm::vec3(1, 0, 0)));
+
+                glm::vec3 reflectionY = glm::cross(reflection.direction, reflectionX);
+
+                int goodSamples = 0;
+                for (int i = 0; i < features.extra.glossySamples; i++) {
+                    /*
+
+                    // Phong shading sampling style
+
+                    float altitude = pow(to_double(next_rand()), hitInfo.material.shininess) * std::numbers::pi;
+                    float azimuth = to_double(next_rand()) * 2 * std::numbers::pi;
+
+                    if (enableDebugDraw) {
+                        altitude = pow(to_double(next_rand(rand_state)), hitInfo.material.shininess) * std::numbers::pi;
+                        azimuth = to_double(next_rand(rand_state)) * 2 * std::numbers::pi;
+                    }
+
+                    Ray gloss {
+                        reflection.origin,
+                        (reflectionX * cos(azimuth) + reflectionY * sin(azimuth)) * sin(altitude)
+                            + reflection.direction * cos(altitude),
+                        std::numeric_limits<float>::max(),
+                    };
+
+                    */
+
+                    // Circle sampling, radius = 1 / shininess
+
+                    float theta = to_double(next_rand()) * 2 * std::numbers::pi;
+                    float r = std::sqrt(to_double(next_rand()));
+
+                    if (enableDebugDraw) {
+                        theta = to_double(next_rand(rand_state)) * 2 * std::numbers::pi;
+                        r = std::sqrt(to_double(next_rand(rand_state)));
+                    }
+
+                    Ray gloss {
+                        reflection.origin,
+                        reflection.direction
+                            + (reflectionX * cos(theta) + reflectionY * sin(theta)) * r / hitInfo.material.shininess,
+                        std::numeric_limits<float>::max(),
+                    };
+
+                    gloss.origin += glm::vec3(0.000001) * gloss.direction;
+
+                    if (dot(gloss.direction, hitInfo.normal) > 0) {
+                        reflectedColor += getFinalColor(scene, bvh, gloss, features, rayDepth + 1);
+                        goodSamples++;
+                    }
+                }
+                reflectedColor /= goodSamples;
+
+            } else {
+                // reflectedColor = computeLightContribution(scene, bvh, features, reflection, hitInfo);
+                reflectedColor += getFinalColor(scene, bvh, reflection, features, rayDepth + 1);
+            }
+
             Lo += hitInfo.material.ks * reflectedColor;
         }
 
         // Visual debug for shading + recursive ray tracing
         drawRay(ray, Lo);
 
-        drawNormal(ray, hitInfo);
+        if (features.debug.drawHitNormal)
+            drawNormal(ray, hitInfo);
 
         // Draw shadow rays
         if (features.enableHardShadow)

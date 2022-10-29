@@ -1,63 +1,62 @@
 # CG Final Project Report
 
-Kazek Ciaś 5467640  
-Renyi Yang  5470668
+Kazek Ciaś 5467640
+Renyi Yang 5470668
 Toma Volentir 5454123
 Group number: 62
 
-1. ##  Work Distribution
+## Work Distribution
 
-   Reflected in "final-project-workload-final.xlsx"
+Reflected in "final-project-workload-final.xlsx"
 
-2. ## Features
-- #### Shading
+## Features
 
-- #### Recursive ray-tracer
+### Shading
 
-- #### Hard shadows
+### Recursive ray-tracer
 
-- #### Area lights
+### Hard shadows
 
-- #### BVH generation
+### Area lights
 
-- #### BVH traversal
+### BVH generation
 
-- #### Normal interpolation
+### BVH traversal
 
-- #### Texture
+### Normal interpolation
 
-- #### Environment maps
+### Texture
 
-- #### SAH+binning
+### Environment maps
 
-- #### Motion blur
+### SAH+binning
 
-- #### Bloom filter
+### Motion blur
 
-- #### Bilinear interpolation
+### Bloom filter
 
-- #### Mipmapping
+### Bilinear interpolation
 
-- #### Cast multiple rays per pixel with irregular sampling
+### Mipmapping
 
-- #### Glossy reflections
+### Irregular sampling
 
-- #### Transparency
+### Glossy reflections
 
-- #### Depth of field
+### Transparency
 
-3. ## Models
+### Depth of field
 
-4. ## Performance test
+## Models
 
-   |                       | Cornell Box | Monkey | Dragon |
-   | --------------------- | ----------- | ------ | :----: |
-   | Num trangles          |             |        |        |
-   | Time to create(BVH)   |             |        |        |
-   | Time to render(BVH)   |             |        |        |
-   | Time to create(SAH)   |             |        |        |
-   | Time to render(SAH)   |             |        |        |
-   | BVH levels            |             |        |        |
-   | Max tris p/ leaf node |             |        |        |
+## Performance test
 
-   
+|                       | Cornell Box | Monkey | Dragon |
+| --------------------- | ----------- | ------ | :----: |
+| Num triangles         |             |        |        |
+| Time to create (BVH)  |             |        |        |
+| Time to render (BVH)  |             |        |        |
+| Time to create (SAH)  |             |        |        |
+| Time to render (SAH)  |             |        |        |
+| BVH levels            |             |        |        |
+| Max tris p/ leaf node |             |        |        |

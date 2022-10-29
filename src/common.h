@@ -51,6 +51,10 @@ struct ParallelogramLight {
     glm::vec3 color0, color1, color2, color3;
 };
 
+struct DebugFeatures {
+    bool drawHitNormal = false;
+};
+
 struct ExtraFeatures {
     bool enableEnvironmentMapping = false;
     bool enableBvhSahBinning = false;
@@ -59,7 +63,10 @@ struct ExtraFeatures {
     bool enableBilinearTextureFiltering = false;
     bool enableMipmapTextureFiltering = false;
     bool enableMultipleRaysPerPixel = false;
+
     bool enableGlossyReflection = false;
+    int glossySamples = 100;
+
     bool enableTransparency = false;
 
     bool enableDepthOfField = false;
@@ -86,4 +93,6 @@ struct Features {
     bool enableAccelStructure = false;
 
     ExtraFeatures extra = {};
+
+    DebugFeatures debug = {};
 };
