@@ -28,6 +28,7 @@ add_library(FinalProjectLib
 	"src/shading.cpp"
 	"src/interpolate.cpp"
 	"src/render.cpp"
+	"src/rand_utils.cpp"
 )
 
 if (REFERENCE_MODE)

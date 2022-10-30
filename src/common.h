@@ -61,14 +61,26 @@ struct ExtraFeatures {
     bool enableMultipleRaysPerPixel = false;
     bool enableGlossyReflection = false;
     bool enableTransparency = false;
+
     bool enableDepthOfField = false;
+    int DOFSamples = 500;
+    float focalLength = 2.5;
+    float apertureRadius = 0.1f;
 };
 
 struct Features {
     bool enableShading = false;
+
     bool enableRecursive = false;
+    int maxRayDepth = 3;
+
     bool enableHardShadow = false;
+
     bool enableSoftShadow = false;
+    bool dynamicSamples = true;
+    int samplesSegment = 100000;
+    int samplesParallel = 1000;
+
     bool enableNormalInterp = false;
     bool enableTextureMapping = false;
     bool enableAccelStructure = false;
