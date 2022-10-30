@@ -217,6 +217,7 @@ bool BoundingVolumeHierarchy::intersect(Ray& ray, HitInfo& hitInfo, const Featur
                     Vertex v3 = m_pScene->meshes[tt].vertices[z];
                     bool h = intersectRayWithTriangle(v1.position, v2.position, v3.position, ray, hitInfo);
                     if (h && ray.t >= 0 && ray.t < rayT) {
+                        drawTriangle(v1, v2, v3);
                         rayT = ray.t;
                         hitInfo.material = m_pScene->meshes[tt].material;
                         if (features.enableNormalInterp) {
@@ -231,10 +232,12 @@ bool BoundingVolumeHierarchy::intersect(Ray& ray, HitInfo& hitInfo, const Featur
             } else {
                 float t = ray.t;
                 if (intersectRayWithShape(current.boundary, ray)) {
+                    drawAABB(current.boundary, DrawMode::Wireframe, glm::vec3(1.0f, 1.0f, 1.0f), 0.7f);
                     ray.t = t;
                     for (int i = 0; i < current.children.size(); i++)
                         if (current.children[i] != -1
                             && intersectRayWithShape(tree[current.children[i]].boundary, ray)) {
+                            drawAABB(tree[current.children[i]].boundary, DrawMode::Wireframe, glm::vec3(1.0f, 1.0f, 1.0f), 0.7f);
                             ray.t = t;
                             q.push(tree[current.children[i]]);
                         }
