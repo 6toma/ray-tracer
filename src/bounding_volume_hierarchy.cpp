@@ -6,31 +6,8 @@
 #include "interpolate.h"
 #include <glm/glm.hpp>
 #include<iostream>
-struct Node {
-    // represent the level of the node in the tree, the depth of the root is 0
-    int depth;
-    //true iff the node doesn't have children
-    bool isleaf;
-    //if this node is an internal node, it stores the TWO indexes of it's children. if this node only has one child, the other index will be set as -1.
-    //if this node is a leaf node, it stores infomation about traingles in it's AABB,every continuous 4 values represent a triangle
-    //so the length of the vector should always be a mutiple of four. let's say (a,b,c,d) stand for the coordinate of a triangle,
-    //"a" represents the ordinal of it's cooresponding mesh, start from zero, (b,c,d) are indexes of points stored in this mesh, 
-    //representing 3 vertices for the triangle. see method "debugDrawLeaf" for an usage example
-    std::vector<int> children;
-    //represent the bounding box, see method "debugDrawLevel" for an usage exmaple.
-    AxisAlignedBox boundary;
-    /*
-    Node(std::vector<glm::vec4>& index) {
-        traingleIndex = index;
-        boundary.lower = glm::vec3{ INT_MAX };
-        boundary.upper = glm::vec3 { INT_MIN };
-        for (auto t : traingleIndex) {
-            Vertex v1 = pScene->meshes[x[0]].vertices[x[1]];
-            Vertex v2 = pScene->meshes[x[0]].vertices[x[2]];
-            Vertex v3 = pScene->meshes[x[0]].vertices[x[3]];
-        }
-    }*/
-};
+#include <queue>
+
 //!!! the final tree stucture, all the access to bvh should be via this.
 std::vector<Node> tree;
 int treeConstruction(std::vector<Node>& t, Scene* pScene,std::vector<glm::vec4>& traingleIndex,int depth, int maxdepth = 20){
@@ -188,7 +165,6 @@ void BoundingVolumeHierarchy::debugDrawLeaf(int leafIdx)
     // once you find the leaf node, you can use the function drawTriangle (from draw.h) to draw the contained primitives
 }
 
-
 // Return true if something is hit, returns false otherwise. Only find hits if they are closer than t stored
 // in the ray and if the intersection is on the correct side of the origin (the new t >= 0). Replace the code
 // by a bounding volume hierarchy acceleration structure as described in the assignment. You can change any
@@ -209,6 +185,9 @@ bool BoundingVolumeHierarchy::intersect(Ray& ray, HitInfo& hitInfo, const Featur
                     if (features.enableNormalInterp) {
                         hitInfo.normal = interpolateNormal(v0.normal, v1.normal, v2.normal, hitInfo.barycentricCoord);
                     }
+                    if (features.enableTextureMapping) {
+                        hitInfo.texCoord = interpolateTexCoord(v0.normal, v1.normal, v2.normal, hitInfo.barycentricCoord);
+                    }
                     hitInfo.material = mesh.material;
                     hit = true;
                 }
@@ -219,9 +198,49 @@ bool BoundingVolumeHierarchy::intersect(Ray& ray, HitInfo& hitInfo, const Featur
             hit |= intersectRayWithShape(sphere, ray, hitInfo);
         return hit;
     } else {
-        // TODO: implement here the bounding volume hierarchy traversal.
-        // Please note that you should use `features.enableNormalInterp` and `features.enableTextureMapping`
-        // to isolate the code that is only needed for the normal interpolation and texture mapping features.
-        return false;
+        bool hit = false;
+        float rayT = std::numeric_limits<float>::max();
+        std::queue<Node> q;
+        q.push(tree[0]); // push root to queue
+
+        while (!q.empty()) {
+            Node current = q.front();
+            q.pop();
+            if (current.isleaf) {
+                for (int i = 0; i < current.children.size(); i += 4) {
+                    int tt = current.children[i];
+                    int x = current.children[i + 1];
+                    int y = current.children[i + 2];
+                    int z = current.children[i + 3];
+                    Vertex v1 = m_pScene->meshes[tt].vertices[x];
+                    Vertex v2 = m_pScene->meshes[tt].vertices[y];
+                    Vertex v3 = m_pScene->meshes[tt].vertices[z];
+                    bool h = intersectRayWithTriangle(v1.position, v2.position, v3.position, ray, hitInfo);
+                    if (h && ray.t >= 0 && ray.t < rayT) {
+                        rayT = ray.t;
+                        hitInfo.material = m_pScene->meshes[tt].material;
+                        if (features.enableNormalInterp) {
+                            hitInfo.normal = interpolateNormal(v1.normal, v2.normal, v3.normal, hitInfo.barycentricCoord);
+                        }
+                        if (features.enableTextureMapping) {
+                            hitInfo.texCoord = interpolateTexCoord(v1.normal, v2.normal, v3.normal, hitInfo.barycentricCoord);
+                        }
+                        hit = true;
+                    }
+                }
+            } else {
+                float t = ray.t;
+                if (intersectRayWithShape(current.boundary, ray)) {
+                    ray.t = t;
+                    for (int i = 0; i < current.children.size(); i++)
+                        if (current.children[i] != -1
+                            && intersectRayWithShape(tree[current.children[i]].boundary, ray)) {
+                            ray.t = t;
+                            q.push(tree[current.children[i]]);
+                        }
+                }
+            }
+        }
+        return hit;
     }
 }
