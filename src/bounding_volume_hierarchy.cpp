@@ -11,7 +11,7 @@
 
 //!!! the final tree stucture, all the access to bvh should be via this.
 std::vector<Node> tree;
-void UpdateAABB(AxisAlignedBox boundary, Vertex v1, Vertex v2, Vertex v3)
+void updateAABB(AxisAlignedBox &boundary, Vertex &v1, Vertex &v2, Vertex &v3)
 {
     for (int i = 0; i < 3; i++) { 
         boundary.lower[i]
@@ -20,14 +20,19 @@ void UpdateAABB(AxisAlignedBox boundary, Vertex v1, Vertex v2, Vertex v3)
             = std::max(std::max(boundary.upper[i], v1.position[i]), std::max(v2.position[i], v3.position[i]));
     }
 }
+float getSurface(const AxisAlignedBox& boundary) { 
+    glm::vec3 t = boundary.upper - boundary.lower;
+    return 2.0 * (t.x * t.y + t.x * t.z + t.y * t.z);
+}
 std::tuple<int, int> SurfaceAreaHeuristics(Scene* pScene,std::vector<glm::vec4>& traingleIndex)
 {
-    int axis, median[3];
+    int axis, optAxis,optIndex;
     int n = traingleIndex.size();
-    std::vector<int> l;
-    std::vector<int> r;
+    std::vector<float> l;
+    std::vector<float> r;
     for (axis = 0; axis < 3; axis++) {
-        int optIndex = -1, optScore = 1e9;
+        optIndex = -1;
+        float optScore = 1e9;
         l.clear(), r.clear();
         AxisAlignedBox leftBoundary,rightBoundary;
         leftBoundary.lower = glm::vec3 { -1e9 };
@@ -44,10 +49,33 @@ std::tuple<int, int> SurfaceAreaHeuristics(Scene* pScene,std::vector<glm::vec4>&
             return v1.position[axis] + v2.position[axis] + v3.position[axis]
                 < v4.position[axis] + v5.position[axis] + v6.position[axis];
         });
-        for (int leftAmount = 1; leftAmount < n; leftAmount++) { }
+        for (int leftAmount = 1; leftAmount < n; leftAmount++) { 
+            glm::vec4 front = traingleIndex[leftAmount];
+            glm::vec4 back = traingleIndex[n - leftAmount];
+            updateAABB(
+                leftBoundary, pScene->meshes[front[0]].vertices[front[1]], pScene->meshes[front[0]].vertices[front[2]],
+                pScene->meshes[front[0]].vertices[front[3]]
+            );
+            updateAABB(
+                rightBoundary, pScene->meshes[back[0]].vertices[back[1]], pScene->meshes[back[0]].vertices[back[2]],
+                pScene->meshes[back[0]].vertices[back[3]]
+            );
+            l.push_back(getSurface(leftBoundary));
+            r.push_back(getSurface(rightBoundary));
+        }
+        for (int leftAmount = 1; leftAmount < n; leftAmount++) {
+            float s1 = l[leftAmount - 1];
+            float s2 = r[n - 1 - leftAmount];
+            float cur = s1 * leftAmount + s2 * (n - leftAmount);
+            if (optIndex == -1 || cur < optScore) {
+                optAxis = axis;
+                optIndex = leftAmount;
+                optScore = cur;
+            }
+        }
 
     }
-    return std::make_tuple(0,0);
+    return std::make_tuple(optAxis,optIndex);
 }
 int treeConstruction(
     std::vector<Node>& t, Scene* pScene, std::vector<glm::vec4>& traingleIndex, int depth,
@@ -62,7 +90,7 @@ int treeConstruction(
         Vertex v1 = pScene->meshes[t[0]].vertices[t[1]];
         Vertex v2 = pScene->meshes[t[0]].vertices[t[2]];
         Vertex v3 = pScene->meshes[t[0]].vertices[t[3]];
-        UpdateAABB(node.boundary, v1, v2, v3);
+        updateAABB(node.boundary, v1, v2, v3);
     }
     node.depth = depth;
     node.isleaf = false;
@@ -76,10 +104,10 @@ int treeConstruction(
         }
         return res;
     }
-    int median = traingleIndex.size() / 2;//median to the left child
+    int median = traingleIndex.size() / 2;
     int axis = depth % 3;
     if (features.extra.enableBvhSahBinning)
-        std::tie(median, axis) = SurfaceAreaHeuristics(pScene,traingleIndex);
+        std::tie(axis, median) = SurfaceAreaHeuristics(pScene,traingleIndex);
     std::sort(
         traingleIndex.begin(),
         traingleIndex.end(),
@@ -92,9 +120,7 @@ int treeConstruction(
             Vertex v6 = pScene->meshes[y[0]].vertices[y[3]];
             return v1.position[axis] + v2.position[axis] + v3.position[axis] < v4.position[axis] + v5.position[axis] + v6.position[axis];
         });
-    std::vector<glm::vec4> leftcontent = { traingleIndex.begin(), traingleIndex.end() - median };
-    if (traingleIndex.size() % 2)
-        median++;
+    std::vector<glm::vec4> leftcontent = { traingleIndex.begin(), traingleIndex.begin() + median };
     std::vector<glm::vec4> rightcontent = { traingleIndex.begin() + median, traingleIndex.end() };
     int v1 = treeConstruction(t, pScene, leftcontent, depth + 1,features,maxdepth);
     t[res].children.push_back(v1);
