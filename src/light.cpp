@@ -8,6 +8,7 @@ DISABLE_WARNINGS_PUSH()
 DISABLE_WARNINGS_POP()
 #include <cmath>
 #include <random>
+#include <texture.h>
 
 // samples a segment light source
 // you should fill in the vectors position and color with the sampled position and color
@@ -32,20 +33,46 @@ void sampleParallelogramLight(const ParallelogramLight& parallelogramLight, glm:
         + parallelogramLight.color2 * x * (1 - y) + parallelogramLight.color3 * (1 - x) * (1 - y);
 }
 
-// test the visibility at a given light sample
-// returns 1.0 if sample is visible, 0.0 otherwise
-float testVisibilityLightSample(
+/// test the visibility at a given light sample
+/// returns 1.0 if sample is visible, 0.0 otherwise
+glm::vec3 testVisibilityLightSample(
     const glm::vec3& samplePos, const glm::vec3& debugColor, const BvhInterface& bvh, const Features& features, Ray ray,
     HitInfo hitInfo
+)
+{
+    return testVisibilityLightSample(samplePos, debugColor, bvh, features, ray, hitInfo, 0);
+}
+
+// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! IMPORTANT !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+// !             apparently we can change function signatures             !
+// ! if not, this is illegal and should be changed back before submission !
+// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+glm::vec3 testVisibilityLightSample(
+    const glm::vec3& samplePos, const glm::vec3& debugColor, const BvhInterface& bvh, const Features& features, Ray ray,
+    HitInfo hitInfo, int shadowDepth
 )
 {
     glm::vec3 pos = ray.origin + ray.direction * ray.t;
     glm::vec3 offset = glm::normalize(samplePos - pos) * 0.000001f;
     Ray lightRay { pos + offset, samplePos - pos - offset, 1 };
+    glm::vec3 finalColor;
     if (features.enableHardShadow && bvh.intersect(lightRay, hitInfo, features) && lightRay.t < 1)
-        return 0.0;
+        if (features.enableRecursive && features.extra.enableTransparency && hitInfo.material.transparency < 1
+            && shadowDepth < features.maxRayDepth) {
 
-    return 1.0;
+            finalColor = hitInfo.material.kd * hitInfo.material.transparency
+                    * (hitInfo.material.kdTexture
+                           ? acquireTexel(*hitInfo.material.kdTexture, hitInfo.texCoord, features)
+                           : glm::vec3(1))
+                + testVisibilityLightSample(samplePos, debugColor, bvh, features, lightRay, hitInfo, shadowDepth + 1)
+                    * (1 - hitInfo.material.transparency);
+        } else
+            finalColor = glm::vec3(0.0);
+    else
+        finalColor = glm::vec3(1.0);
+
+    if (features.enableHardShadow) drawRay(lightRay, finalColor);
+    return finalColor;
 }
 
 // given an intersection, computes the contribution from all light sources at the intersection point

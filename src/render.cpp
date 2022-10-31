@@ -113,8 +113,8 @@ glm::vec3 getFinalColor(const Scene& scene, const BvhInterface& bvh, Ray ray, co
             drawNormal(ray, hitInfo);
 
         // Draw shadow rays
-        if (features.enableHardShadow)
-            drawShadowRays(ray, scene, bvh, features);
+        //if (features.enableHardShadow)
+        //    drawShadowRays(ray, scene, bvh, features);
 
         // Set the color of the pixel if the ray hits.
         // return glm::abs(hitInfo.normal);
@@ -196,17 +196,18 @@ glm::vec3 DOFColor(
     return pixelColor / glm::vec3(features.extra.DOFSamples);
 }
 
+// For later use, dw abt this
 // Calculates the ratio between reflection and refraction
-float fresnel(const Ray& ray, const HitInfo& hitInfo, float IORfrom, float IORto)
-{
-    // Shlick's approximation for Fresnel
-    float r0 = ((IORfrom - IORto) * (IORfrom - IORto)) / ((IORfrom + IORto) * (IORfrom + IORto));
-    float cosTheta = -glm::dot(glm::normalize(ray.direction), hitInfo.normal);
-    if (IORfrom > IORto) {
-        float sinTheta2 = (1.0 - cosTheta * cosTheta) * IORfrom * IORfrom / (IORto * IORto);
-        if (sinTheta2 > 1.0)
-            // Total internal
-            return 1.0;
-        cosTheta = std::sqrt(1.0 - sinTheta2);
-    }
-}
+//float fresnel(const Ray& ray, const HitInfo& hitInfo, float IORfrom, float IORto)
+//{
+//    // Shlick's approximation for Fresnel
+//    float r0 = ((IORfrom - IORto) * (IORfrom - IORto)) / ((IORfrom + IORto) * (IORfrom + IORto));
+//    float cosTheta = -glm::dot(glm::normalize(ray.direction), hitInfo.normal);
+//    if (IORfrom > IORto) {
+//        float sinTheta2 = (1.0 - cosTheta * cosTheta) * IORfrom * IORfrom / (IORto * IORto);
+//        if (sinTheta2 > 1.0)
+//            // Total internal
+//            return 1.0;
+//        cosTheta = std::sqrt(1.0 - sinTheta2);
+//    }
+//}
