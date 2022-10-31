@@ -75,6 +75,7 @@ int main(int argc, char** argv)
         bool debugBVHLeaf { false };
         bool debugNormals { false };
         bool debugMotionBlur { false };
+        bool debugSplit { false };
         ViewMode viewMode { ViewMode::Rasterization };
 
         window.registerKeyCallback([&](int key, int /* scancode */, int action, int /* mods */) {
@@ -250,6 +251,7 @@ int main(int argc, char** argv)
                 ImGui::Checkbox("Draw BVH Leaf", &debugBVHLeaf);
                 if (debugBVHLeaf)
                     ImGui::SliderInt("BVH Leaf", &bvhDebugLeaf, 1, bvh.numLeaves());
+                ImGui::Checkbox("Draw split plane", &debugSplit);
                 ImGui::Checkbox("Draw normals", &debugNormals);
                 if (debugNormals)
                     ImGui::SliderInt("Normal interpolation level", &normalDebugLevel, 0, 2);
@@ -406,7 +408,7 @@ int main(int argc, char** argv)
 
                 drawLightsOpenGL(scene, camera, selectedLightIdx);
 
-                if (debugBVHLevel || debugBVHLeaf) {
+                if (debugBVHLevel || debugBVHLeaf || debugSplit) {
                     glPushAttrib(GL_ALL_ATTRIB_BITS);
                     setOpenGLMatrices(camera);
                     glDisable(GL_LIGHTING);
@@ -421,6 +423,9 @@ int main(int argc, char** argv)
                         bvh.debugDrawLevel(bvhDebugLevel);
                     if (debugBVHLeaf)
                         bvh.debugDrawLeaf(bvhDebugLeaf);
+                    if (debugSplit) {
+                        bvh.debugDrawSplit(bvhDebugLevel);
+                    }
                     enableDebugDraw = false;
                     glPopAttrib();
                 }

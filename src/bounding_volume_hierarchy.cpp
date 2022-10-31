@@ -88,6 +88,8 @@ int treeConstruction(
     Node node;
     node.boundary.lower = glm::vec3 { 1e9 };
     node.boundary.upper = glm::vec3 { -1e9 };
+    node.split.upper = glm::vec3 { 0.0f };
+    node.split.lower = glm::vec3 { 0.0f };
     for (auto t : traingleIndex) {
         Vertex v1 = pScene->meshes[t[0]].vertices[t[1]];
         Vertex v2 = pScene->meshes[t[0]].vertices[t[2]];
@@ -110,6 +112,14 @@ int treeConstruction(
     int axis = depth % 3;
     if (features.extra.enableBvhSahBinning)
         std::tie(axis, median) = SurfaceAreaHeuristics(pScene,traingleIndex);
+    t[res].split = node.boundary;
+    glm::vec4 inx = traingleIndex[median];
+    Vertex r1 = pScene->meshes[inx[0]].vertices[inx[1]];
+    Vertex r2 = pScene->meshes[inx[0]].vertices[inx[2]];
+    Vertex r3 = pScene->meshes[inx[0]].vertices[inx[3]];
+    float sp = (r1.position[axis] + r2.position[axis], + r3.position[axis])/3.0;
+    t[res].split.lower[axis] = sp;
+    t[res].split.upper[axis] = sp;
     std::sort(
         traingleIndex.begin(),
         traingleIndex.end(),
@@ -200,7 +210,21 @@ void BoundingVolumeHierarchy::debugDrawLevel(int level)
   //  drawAABB(aabb, DrawMode::Filled, glm::vec3(0.05f, 1.0f, 0.05f), 0.1f);
 }
 
-
+void BoundingVolumeHierarchy::debugSplit(int level)
+{
+    // Draw the AABB as a transparent green box.
+    // AxisAlignedBox aabb{ glm::vec3(-0.05f), glm::vec3(0.05f, 1.05f, 1.05f) };
+    // drawShape(aabb, DrawMode::Filled, glm::vec3(0.0f, 1.0f, 0.0f), 0.2f);
+    for (Node node : tree) {
+        if (node.depth == level) {
+            drawAABB(node.split, DrawMode::Filled, glm::vec3(1.0f, 0.0f, 0.0f), 0.7f);
+        }
+    }
+    // Draw the AABB as a (white) wireframe box.
+    //  AxisAlignedBox aabb { glm::vec3(0.0f), glm::vec3(0.0f, 1.05f, 1.05f) };
+    // drawAABB(aabb, DrawMode::Wireframe);
+    //  drawAABB(aabb, DrawMode::Filled, glm::vec3(0.05f, 1.0f, 0.05f), 0.1f);
+}
 // Use this function to visualize your leaf nodes. This is useful for debugging. The function
 // receives the leaf node to be draw (think of the ith leaf node). Draw the AABB of the leaf node and all contained triangles.
 // You can draw the triangles with different colors. NoteL leafIdx is not the index in the node vector, it is the

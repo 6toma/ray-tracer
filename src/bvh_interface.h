@@ -26,7 +26,7 @@ public:
 
     // Visual Debug 1: Draw the bounding boxes of the nodes at the selected level.
     void debugDrawLevel(int level);
-
+    void debugDrawSplit(int level);
     // Visual Debug 2: Draw the triangles of the i-th leaf
     void debugDrawLeaf(int leafIdx);
 
