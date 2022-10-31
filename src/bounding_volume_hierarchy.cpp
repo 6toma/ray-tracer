@@ -70,7 +70,7 @@ int treeConstruction(std::vector<Node>& t, Scene* pScene,std::vector<glm::vec4>&
     }
     return res;
 }
-BoundingVolumeHierarchy::BoundingVolumeHierarchy(Scene* pScene)
+BoundingVolumeHierarchy::BoundingVolumeHierarchy(Scene* pScene, const Features& features)
     : m_pScene(pScene)
 {
     tree.clear();
