@@ -24,72 +24,86 @@ glm::vec3 getFinalColor(const Scene& scene, const BvhInterface& bvh, Ray ray, co
 
         glm::vec3 Lo = computeLightContribution(scene, bvh, features, ray, hitInfo);
 
-        if (features.enableRecursive && rayDepth < features.maxRayDepth && hitInfo.material.ks != glm::vec3(0)) {
+        if (features.enableRecursive && rayDepth < features.maxRayDepth) {
             Ray reflection = computeReflectionRay(ray, hitInfo);
             glm::vec3 reflectedColor(0);
 
-            if (features.extra.enableGlossyReflection) {
-                glm::vec3 reflectionX = (reflection.direction == glm::vec3(1, 0, 0))
-                    ? glm::normalize(glm::cross(reflection.direction, glm::vec3(0, 0, 1)))
-                    : glm::normalize(glm::cross(reflection.direction, glm::vec3(1, 0, 0)));
+            if (hitInfo.material.transparency < 1 && features.extra.enableTransparency) {
+                Ray trans {
+                    ray.origin + ray.direction * ray.t * 1.000001f,
+                    ray.direction,
+                    std::numeric_limits<float>::max(),
+                };
 
-                glm::vec3 reflectionY = glm::cross(reflection.direction, reflectionX);
-
-                int goodSamples = 0;
-                for (int i = 0; i < features.extra.glossySamples; i++) {
-                    /*
-
-                    // Phong shading sampling style
-
-                    float altitude = pow(to_double(next_rand()), hitInfo.material.shininess) * std::numbers::pi;
-                    float azimuth = to_double(next_rand()) * 2 * std::numbers::pi;
-
-                    if (enableDebugDraw) {
-                        altitude = pow(to_double(next_rand(rand_state)), hitInfo.material.shininess) * std::numbers::pi;
-                        azimuth = to_double(next_rand(rand_state)) * 2 * std::numbers::pi;
-                    }
-
-                    Ray gloss {
-                        reflection.origin,
-                        (reflectionX * cos(azimuth) + reflectionY * sin(azimuth)) * sin(altitude)
-                            + reflection.direction * cos(altitude),
-                        std::numeric_limits<float>::max(),
-                    };
-
-                    */
-
-                    // Circle sampling, radius = 1 / shininess
-
-                    float theta = to_double(next_rand()) * 2 * std::numbers::pi;
-                    float r = std::sqrt(to_double(next_rand()));
-
-                    if (enableDebugDraw) {
-                        theta = to_double(next_rand(rand_state)) * 2 * std::numbers::pi;
-                        r = std::sqrt(to_double(next_rand(rand_state)));
-                    }
-
-                    Ray gloss {
-                        reflection.origin,
-                        reflection.direction
-                            + (reflectionX * cos(theta) + reflectionY * sin(theta)) * r / hitInfo.material.shininess,
-                        std::numeric_limits<float>::max(),
-                    };
-
-                    gloss.origin += glm::vec3(0.000001) * gloss.direction;
-
-                    if (dot(gloss.direction, hitInfo.normal) > 0) {
-                        reflectedColor += getFinalColor(scene, bvh, gloss, features, rayDepth + 1);
-                        goodSamples++;
-                    }
-                }
-                reflectedColor /= goodSamples;
-
-            } else {
-                // reflectedColor = computeLightContribution(scene, bvh, features, reflection, hitInfo);
-                reflectedColor += getFinalColor(scene, bvh, reflection, features, rayDepth + 1);
+                Lo = Lo * hitInfo.material.transparency
+                    + getFinalColor(scene, bvh, trans, features, rayDepth + 1) * (1 - hitInfo.material.transparency); 
             }
 
-            Lo += hitInfo.material.ks * reflectedColor;
+            if (hitInfo.material.ks != glm::vec3(0)) {
+                if (features.extra.enableGlossyReflection) {
+                    glm::vec3 reflectionX = (reflection.direction == glm::vec3(1, 0, 0))
+                        ? glm::normalize(glm::cross(reflection.direction, glm::vec3(0, 0, 1)))
+                        : glm::normalize(glm::cross(reflection.direction, glm::vec3(1, 0, 0)));
+
+                    glm::vec3 reflectionY = glm::cross(reflection.direction, reflectionX);
+
+                    int goodSamples = 0;
+                    for (int i = 0; i < features.extra.glossySamples; i++) {
+                        /*
+
+                        // Phong shading sampling style
+
+                        float altitude = pow(to_double(next_rand()), hitInfo.material.shininess) * std::numbers::pi;
+                        float azimuth = to_double(next_rand()) * 2 * std::numbers::pi;
+
+                        if (enableDebugDraw) {
+                            altitude = pow(to_double(next_rand(rand_state)), hitInfo.material.shininess) *
+                        std::numbers::pi; azimuth = to_double(next_rand(rand_state)) * 2 * std::numbers::pi;
+                        }
+
+                        Ray gloss {
+                            reflection.origin,
+                            (reflectionX * cos(azimuth) + reflectionY * sin(azimuth)) * sin(altitude)
+                                + reflection.direction * cos(altitude),
+                            std::numeric_limits<float>::max(),
+                        };
+
+                        */
+
+                        // Circle sampling, radius = 1 / shininess
+
+                        float theta = to_double(next_rand()) * 2 * std::numbers::pi;
+                        float r = std::sqrt(to_double(next_rand()));
+
+                        if (enableDebugDraw) {
+                            theta = to_double(next_rand(rand_state)) * 2 * std::numbers::pi;
+                            r = std::sqrt(to_double(next_rand(rand_state)));
+                        }
+
+                        Ray gloss {
+                            reflection.origin,
+                            reflection.direction
+                                + (reflectionX * cos(theta) + reflectionY * sin(theta)) * r
+                                    / hitInfo.material.shininess,
+                            std::numeric_limits<float>::max(),
+                        };
+
+                        gloss.origin += 0.000001f * gloss.direction;
+
+                        if (dot(gloss.direction, hitInfo.normal) > 0) {
+                            reflectedColor += getFinalColor(scene, bvh, gloss, features, rayDepth + 1);
+                            goodSamples++;
+                        }
+                    }
+                    reflectedColor /= goodSamples;
+
+                } else {
+                    // reflectedColor = computeLightContribution(scene, bvh, features, reflection, hitInfo);
+                    reflectedColor += getFinalColor(scene, bvh, reflection, features, rayDepth + 1);
+                }
+
+                Lo += hitInfo.material.ks * reflectedColor;
+            }
         }
 
         // Visual debug for shading + recursive ray tracing
@@ -121,7 +135,7 @@ void renderRayTracing(
     glm::ivec2 windowResolution = screen.resolution();
 
     Plane focalPlane {
-        glm::dot(camera.position() + camera.forward() * glm::vec3(features.extra.focalLength), camera.forward()),
+        glm::dot(camera.position() + camera.forward() * features.extra.focalLength, camera.forward()),
         camera.forward(),
     };
 
@@ -180,4 +194,19 @@ glm::vec3 DOFColor(
     }
 
     return pixelColor / glm::vec3(features.extra.DOFSamples);
+}
+
+// Calculates the ratio between reflection and refraction
+float fresnel(const Ray& ray, const HitInfo& hitInfo, float IORfrom, float IORto)
+{
+    // Shlick's approximation for Fresnel
+    float r0 = ((IORfrom - IORto) * (IORfrom - IORto)) / ((IORfrom + IORto) * (IORfrom + IORto));
+    float cosTheta = -glm::dot(glm::normalize(ray.direction), hitInfo.normal);
+    if (IORfrom > IORto) {
+        float sinTheta2 = (1.0 - cosTheta * cosTheta) * IORfrom * IORfrom / (IORto * IORto);
+        if (sinTheta2 > 1.0)
+            // Total internal
+            return 1.0;
+        cosTheta = std::sqrt(1.0 - sinTheta2);
+    }
 }

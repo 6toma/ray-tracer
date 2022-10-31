@@ -40,7 +40,7 @@ float testVisibilityLightSample(
 )
 {
     glm::vec3 pos = ray.origin + ray.direction * ray.t;
-    glm::vec3 offset = glm::normalize(samplePos - pos) * glm::vec3(0.000001);
+    glm::vec3 offset = glm::normalize(samplePos - pos) * 0.000001f;
     Ray lightRay { pos + offset, samplePos - pos - offset, 1 };
     if (features.enableHardShadow && bvh.intersect(lightRay, hitInfo, features) && lightRay.t < 1)
         return 0.0;

@@ -47,6 +47,10 @@ Reflected in "final-project-workload-final.xlsx"
 
 ### Depth of field
 
+Sources:
+
+- The book
+
 ## Models
 
 ## Performance test

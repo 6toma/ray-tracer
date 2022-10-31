@@ -22,7 +22,7 @@ enum SceneType {
     Teapot,
     Dragon,
     Spheres,
-    Custom,
+    Theatre,
 };
 
 struct Scene {

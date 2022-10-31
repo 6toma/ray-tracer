@@ -87,7 +87,7 @@ int main(int argc, char** argv)
 
                     focalPlane = {
                         glm::dot(
-                            camera.position() + camera.forward() * glm::vec3(config.features.extra.focalLength),
+                            camera.position() + camera.forward() * config.features.extra.focalLength,
                             camera.forward()
                         ),
                         camera.forward(),
@@ -132,7 +132,7 @@ int main(int argc, char** argv)
                     "Teapot",
                     "Dragon",
                     /* "AABBs",*/ "Spheres", /*"Mixed",*/
-                    "Custom",
+                    "Theatre",
                 };
                 if (ImGui::Combo("Scenes", reinterpret_cast<int*>(&sceneType), items.data(), int(items.size()))) {
                     optDebugRay.reset();
