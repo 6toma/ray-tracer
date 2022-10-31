@@ -53,10 +53,10 @@ Group number: 62
    |                       | Cornell Box | Monkey   |  Dragon   |
    | --------------------- | ----------- | -------- | :-------: |
    | Num trangles          |             |          |           |
-   | Time to render(BVH)   | 5.16341     | 5.53114s | 16.0891s  |
-   | Time to create(BVH)   | 0.2184ms    | 2.4425ms | 241.233ms |
-   | Time to render(SAH)   | 3.00372s    | 4.72717s | 5.68705s  |
-   | Time to create(SAH)   | 0.2251ms    | 2.8635ms | 236.589ms |
+   | Time to render(BVH)   | 2.3926s     | 7.24352s | 8.86709s  |
+   | Time to create(BVH)   | 0.0895ms    | 1.9926ms | 241.233ms |
+   | Time to render(SAH)   | 1.12851s    | 4.08751s |  3.6006s  |
+   | Time to create(SAH)   | 0.144ms     | 6.433ms  | 925.872ms |
    | BVH levels            |             |          |           |
    | Max tris p/ leaf node |             |          |           |
 

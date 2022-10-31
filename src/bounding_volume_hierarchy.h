@@ -12,6 +12,7 @@ struct Node {
     bool isleaf;
     std::vector<int> children;
     AxisAlignedBox boundary;
+    
 };
 
 class BoundingVolumeHierarchy {

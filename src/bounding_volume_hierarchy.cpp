@@ -27,13 +27,12 @@ float getSurface(const AxisAlignedBox& boundary) {
 }
 std::tuple<int, int> SurfaceAreaHeuristics(Scene* pScene,std::vector<glm::vec4>& traingleIndex)
 {
-    int axis, optAxis,optIndex;
+    int axis, optAxis,optIndex = -1;
+    long double optScore = 1e36;
     int n = traingleIndex.size();
     std::vector<float> l;
     std::vector<float> r;
     for (axis = 0; axis < 3; axis++) {
-        optIndex = -1;
-        float optScore = 1e9;
         l.clear(), r.clear();
         AxisAlignedBox leftBoundary,rightBoundary;
         leftBoundary.lower = glm::vec3 { 1e9 };
@@ -68,8 +67,9 @@ std::tuple<int, int> SurfaceAreaHeuristics(Scene* pScene,std::vector<glm::vec4>&
             float s1 = l[leftAmount - 1];
             float s2 = r[n - 1 - leftAmount];
             float cur = s1 * leftAmount + s2 * (n - leftAmount);
-          //  std::cout << s1 << " " << s2 << " " << leftAmount << "\n";
-            if (optIndex == -1 || cur < optScore) {
+        //    std::cout << s1 << " " << s2 << " " << leftAmount << " " << cur << " " << optScore
+        //              << "\n ";
+            if (cur < optScore) {
                 optAxis = axis;
                 optIndex = leftAmount;
                 optScore = cur;
@@ -306,6 +306,10 @@ bool BoundingVolumeHierarchy::intersect(Ray& ray, HitInfo& hitInfo, const Featur
                 float t = ray.t;
                 if (intersectRayWithShape(current.boundary, ray)) {
                     drawAABB(current.boundary, DrawMode::Wireframe, glm::vec3(1.0f, 1.0f, 1.0f), 0.7f);
+                    if (ray.t > t) {
+                        ray.t = t;
+                        continue;
+                    }
                     ray.t = t;
                     for (int i = 0; i < current.children.size(); i++)
                         if (current.children[i] != -1
