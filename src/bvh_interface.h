@@ -13,7 +13,7 @@ class BvhInterface {
 public:
 
     // Constructor. Receives the scene and builds the bounding volume hierarchy
-    BvhInterface(Scene* pScene, const Features& features)
+    BvhInterface(Scene* pScene, const Features& features);
 
 
     // Return how many levels there are in the tree that you have constructed.
