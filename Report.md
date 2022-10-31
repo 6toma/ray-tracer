@@ -1,9 +1,9 @@
 # CG Final Project Report
 
-Kazek Ciaś 5467640  
-Renyi Yang  5470668
-Toma Volentir 5454123
-Group number: 62
+Kazek Ciaś 5467640    
+Renyi Yang  5470668               	
+Toma Volentir 5454123   
+Group number: 62  
 
 1. ##  Work Distribution
 
@@ -50,14 +50,14 @@ Group number: 62
 
 4. ## Performance test
 
-   |                       | Cornell Box | Monkey | Dragon |
-   | --------------------- | ----------- | ------ | :----: |
-   | Num trangles          |             |        |        |
-   | Time to create(BVH)   |             |        |        |
-   | Time to render(BVH)   |             |        |        |
-   | Time to create(SAH)   |             |        |        |
-   | Time to render(SAH)   |             |        |        |
-   | BVH levels            |             |        |        |
-   | Max tris p/ leaf node |             |        |        |
+   |                       | Cornell Box | Monkey   |  Dragon   |
+   | --------------------- | ----------- | -------- | :-------: |
+   | Num trangles          |             |          |           |
+   | Time to render(BVH)   | 5.16341     | 5.53114s | 16.0891s  |
+   | Time to create(BVH)   | 0.2184ms    | 2.4425ms | 241.233ms |
+   | Time to render(SAH)   | 3.00372s    | 4.72717s | 5.68705s  |
+   | Time to create(SAH)   | 0.2251ms    | 2.8635ms | 236.589ms |
+   | BVH levels            |             |          |           |
+   | Max tris p/ leaf node |             |          |           |
 
    

@@ -6,6 +6,7 @@
 #include "interpolate.h"
 #include "common.h"
 #include <glm/glm.hpp>
+#include <chrono>
 #include<iostream>
 #include <queue>
 
@@ -35,10 +36,10 @@ std::tuple<int, int> SurfaceAreaHeuristics(Scene* pScene,std::vector<glm::vec4>&
         float optScore = 1e9;
         l.clear(), r.clear();
         AxisAlignedBox leftBoundary,rightBoundary;
-        leftBoundary.lower = glm::vec3 { -1e9 };
-        leftBoundary.upper = glm::vec3 { 1e9 };
-        rightBoundary.lower = glm::vec3  { -1e9 };
-        rightBoundary.upper = glm::vec3 { 1e9 };
+        leftBoundary.lower = glm::vec3 { 1e9 };
+        leftBoundary.upper = glm::vec3 { -1e9 };
+        rightBoundary.lower = glm::vec3  { 1e9 };
+        rightBoundary.upper = glm::vec3 { -1e9 };
         std::sort(traingleIndex.begin(), traingleIndex.end(), [&](const auto& x, const auto& y) {
             Vertex v1 = pScene->meshes[x[0]].vertices[x[1]];
             Vertex v2 = pScene->meshes[x[0]].vertices[x[2]];
@@ -50,7 +51,7 @@ std::tuple<int, int> SurfaceAreaHeuristics(Scene* pScene,std::vector<glm::vec4>&
                 < v4.position[axis] + v5.position[axis] + v6.position[axis];
         });
         for (int leftAmount = 1; leftAmount < n; leftAmount++) { 
-            glm::vec4 front = traingleIndex[leftAmount];
+            glm::vec4 front = traingleIndex[leftAmount-1];
             glm::vec4 back = traingleIndex[n - leftAmount];
             updateAABB(
                 leftBoundary, pScene->meshes[front[0]].vertices[front[1]], pScene->meshes[front[0]].vertices[front[2]],
@@ -67,6 +68,7 @@ std::tuple<int, int> SurfaceAreaHeuristics(Scene* pScene,std::vector<glm::vec4>&
             float s1 = l[leftAmount - 1];
             float s2 = r[n - 1 - leftAmount];
             float cur = s1 * leftAmount + s2 * (n - leftAmount);
+          //  std::cout << s1 << " " << s2 << " " << leftAmount << "\n";
             if (optIndex == -1 || cur < optScore) {
                 optAxis = axis;
                 optIndex = leftAmount;
@@ -79,7 +81,7 @@ std::tuple<int, int> SurfaceAreaHeuristics(Scene* pScene,std::vector<glm::vec4>&
 }
 int treeConstruction(
     std::vector<Node>& t, Scene* pScene, std::vector<glm::vec4>& traingleIndex, int depth,
-    const Features& features, int maxdepth = 20)
+    const Features& features, int maxdepth = 10)
 {
     if (depth > maxdepth||traingleIndex.empty())
         return -1;
@@ -139,6 +141,8 @@ int treeConstruction(
 BoundingVolumeHierarchy::BoundingVolumeHierarchy(Scene* pScene, const Features& features)
     : m_pScene(pScene)
 {
+    using clock = std::chrono::high_resolution_clock;
+    const auto start = clock::now();
     tree.clear();
     std::vector<glm::vec4> traingleIndex;
     int ind = 0;
@@ -149,6 +153,9 @@ BoundingVolumeHierarchy::BoundingVolumeHierarchy(Scene* pScene, const Features& 
         ind++;
     }
     treeConstruction(tree, pScene,traingleIndex,0,features);
+    const auto end = clock::now();
+    std::cout << "Time to create bvh: " << std::chrono::duration<float, std::milli>(end - start).count()
+              << " milliseconds" << std::endl;
 }
 
 // Return the depth of the tree that you constructed. This is used to tell the
