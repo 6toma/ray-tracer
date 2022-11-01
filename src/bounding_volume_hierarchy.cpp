@@ -283,7 +283,8 @@ bool BoundingVolumeHierarchy::intersect(Ray& ray, HitInfo& hitInfo, const Featur
                         hitInfo.normal = interpolateNormal(v0.normal, v1.normal, v2.normal, hitInfo.barycentricCoord);
                     }
                     if (features.enableTextureMapping) {
-                        hitInfo.texCoord = interpolateTexCoord(v0.normal, v1.normal, v2.normal, hitInfo.barycentricCoord);
+                        hitInfo.texCoord
+                            = interpolateTexCoord(v0.texCoord, v1.texCoord, v2.texCoord, hitInfo.barycentricCoord);
                     }
                     hitInfo.material = mesh.material;
                     hit = true;
@@ -325,7 +326,8 @@ bool BoundingVolumeHierarchy::intersect(Ray& ray, HitInfo& hitInfo, const Featur
                             hitInfo.normal = interpolateNormal(v1.normal, v2.normal, v3.normal, hitInfo.barycentricCoord);
                         }
                         if (features.enableTextureMapping) {
-                            hitInfo.texCoord = interpolateTexCoord(v1.normal, v2.normal, v3.normal, hitInfo.barycentricCoord);
+                            hitInfo.texCoord
+                                = interpolateTexCoord(v1.texCoord, v2.texCoord, v3.texCoord, hitInfo.barycentricCoord);
                         }
                         hit = true;
                     }
