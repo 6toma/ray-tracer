@@ -247,6 +247,10 @@ int main(int argc, char** argv)
                 ImGui::Checkbox("Draw normals", &debugNormals);
                 if (debugNormals)
                     ImGui::SliderInt("Normal interpolation level", &normalDebugLevel, 0, 2);
+                ImGui::Checkbox(
+                    "Draw intersected but not visited nodes with a different colour (BVH Traversal)",
+                    &config.features.intersectedButNotVisitedNodes
+                );
             }
 
             ImGui::Spacing();
