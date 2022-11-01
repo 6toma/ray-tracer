@@ -9,7 +9,7 @@
 #endif
 #include <iostream>
 #include <numbers>
-
+MotionBlurSetting motionBlurSetting {};
 glm::vec3 getFinalColor(const Scene& scene, const BvhInterface& bvh, Ray ray, const Features& features, int rayDepth)
 {
     HitInfo hitInfo;
@@ -74,16 +74,23 @@ void renderRayTracing(
                 float(x) / float(windowResolution.x) * 2.0f - 1.0f,
                 float(y) / float(windowResolution.y) * 2.0f - 1.0f,
             };
-            const Ray cameraRay = camera.generateRay(normalizedPixelPos);
-            // screen.setPixel(x, y, getFinalColor(scene, bvh, cameraRay, features));
-
-            glm::vec3 pixelColor;
+            Ray cameraRay = camera.generateRay(normalizedPixelPos);
+            glm::vec3 pixelColor {0.0f};
             if (features.extra.enableDepthOfField)
                 pixelColor = DOFColor(scene, bvh, focalPlane, cameraRay, features, glm::mat2x3(apertureX, apertureY));
-            else
+            else if (features.extra.enableMotionBlur) {
+                int sampleAmount = 200;
+                float cof = 1.0 / (float)(sampleAmount);
+                for (int i = 0; i < sampleAmount; i++) {
+                    float r = -static_cast<float>(rand()) / static_cast<float>(RAND_MAX) * motionBlurSetting.speed;
+                    glm::vec3 offset = motionBlurSetting.movingDirection * r;
+                    cameraRay.origin += offset;
+                    pixelColor += getFinalColor(scene, bvh, cameraRay, features) * cof;
+                    cameraRay.origin -= offset;
+                }
+            } else
                 pixelColor = getFinalColor(scene, bvh, cameraRay, features);
-
-            screen.setPixel(x, y, pixelColor);
+            screen.setPixel(x, y, pixelColor);  
         }
     }
 }
