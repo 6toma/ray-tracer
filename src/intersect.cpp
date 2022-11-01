@@ -162,7 +162,7 @@ bool intersectRayWithShape(const AxisAlignedBox& box, Ray& ray)
     float tin = std::max(std::max(tinx, tiny), tinz);
     float tout = std::min(std::min(toutx, touty), toutz);
 
-    if (tin > tout || tout < 0)
+    /*if (tin > tout || tout < 0)
         return false;
 
     if (tin < 0) 
@@ -172,5 +172,87 @@ bool intersectRayWithShape(const AxisAlignedBox& box, Ray& ray)
 
     if (ray.t == 0)
         return false;
+    return true;*/
+    if ((tin > tout) || (tout < 0))
+        return -1;
+
+    if (tin < 0)
+        tin = 0;
+    return tin;
+}
+
+float intersectRayWithShapeFloat(const AxisAlignedBox& box, Ray& ray)
+{
+    float txmin = (box.lower.x - ray.origin.x) / ray.direction.x;
+    float txmax = (box.upper.x - ray.origin.x) / ray.direction.x;
+    float tymin = (box.lower.y - ray.origin.y) / ray.direction.y;
+    float tymax = (box.upper.y - ray.origin.y) / ray.direction.y;
+    float tzmin = (box.lower.z - ray.origin.z) / ray.direction.z;
+    float tzmax = (box.upper.z - ray.origin.z) / ray.direction.z;
+
+    float tinx = std::min(txmin, txmax);
+    float toutx = std::max(txmin, txmax);
+    float tiny = std::min(tymin, tymax);
+    float touty = std::max(tymin, tymax);
+    float tinz = std::min(tzmin, tzmax);
+    float toutz = std::max(tzmin, tzmax);
+
+    float tin = std::max(std::max(tinx, tiny), tinz);
+    float tout = std::min(std::min(toutx, touty), toutz);
+
+    /*if (tin > tout || tout < 0)
+        return false;
+
+    if (tin < 0)
+        ray.t = std::min(tout, ray.t);
+    else
+        ray.t = std::min(tin, ray.t);
+
+    if (ray.t == 0)
+        return false;
+    return true;*/
+    if ((tin > tout) || (tout < 0))
+        return -1;
+
+    if (tin < 0)
+        tin = 0;
+    return tin;
+}
+
+bool intersectShapeWithoutModifying(const AxisAlignedBox& box, Ray& ray)
+{
+    float initialT = ray.t;
+
+    float txmin = (box.lower.x - ray.origin.x) / ray.direction.x;
+    float txmax = (box.upper.x - ray.origin.x) / ray.direction.x;
+    float tymin = (box.lower.y - ray.origin.y) / ray.direction.y;
+    float tymax = (box.upper.y - ray.origin.y) / ray.direction.y;
+    float tzmin = (box.lower.z - ray.origin.z) / ray.direction.z;
+    float tzmax = (box.upper.z - ray.origin.z) / ray.direction.z;
+
+    float tinx = std::min(txmin, txmax);
+    float toutx = std::max(txmin, txmax);
+    float tiny = std::min(tymin, tymax);
+    float touty = std::max(tymin, tymax);
+    float tinz = std::min(tzmin, tzmax);
+    float toutz = std::max(tzmin, tzmax);
+
+    float tin = std::max(std::max(tinx, tiny), tinz);
+    float tout = std::min(std::min(toutx, touty), toutz);
+
+    if (tin > tout || tout < 0)
+        return false;
+
+    if (tin < 0)
+        ray.t = std::min(tout, ray.t);
+    else
+        ray.t = std::min(tin, ray.t);
+
+    if (ray.t == 0) {
+        ray.t = initialT;
+        return false;
+    }
+
+    ray.t = initialT;
     return true;
 }
