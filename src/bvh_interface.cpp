@@ -3,9 +3,8 @@
 
 //! DON'T TOUCH THIS FILE!
 
-BvhInterface::BvhInterface(Scene* pScene)
-{
-    m_impl = new BoundingVolumeHierarchy(pScene);
+BvhInterface::BvhInterface(Scene* pScene, const Features& features) {
+    m_impl = new BoundingVolumeHierarchy(pScene, features);
 }
 
 // Return the depth of the tree that you constructed. This is used to tell the
@@ -30,7 +29,7 @@ void BvhInterface::debugDrawLevel(int level)
 {
     m_impl->debugDrawLevel(level);
 }
-
+void BvhInterface::debugDrawSplit(int level) { m_impl->debugSplit(level); }
 
 // Use this function to visualize your leaf nodes. This is useful for debugging. The function 
 // receives the leaf node to be draw (think of the ith leaf node). Draw the AABB of the leaf node and all contained triangles.

@@ -4,26 +4,97 @@
 #include "scene.h"
 #include "texture.h"
 #include "interpolate.h"
+#include "common.h"
 #include <glm/glm.hpp>
+#include <chrono>
 #include<iostream>
 #include <queue>
 
 //!!! the final tree stucture, all the access to bvh should be via this.
 std::vector<Node> tree;
-int treeConstruction(std::vector<Node>& t, Scene* pScene,std::vector<glm::vec4>& traingleIndex,int depth, int maxdepth = 20){
+void updateAABB(AxisAlignedBox &boundary, Vertex &v1, Vertex &v2, Vertex &v3)
+{
+    for (int i = 0; i < 3; i++) { 
+        boundary.lower[i]
+            = std::min(std::min(boundary.lower[i], v1.position[i]), std::min(v2.position[i], v3.position[i]));
+        boundary.upper[i]
+            = std::max(std::max(boundary.upper[i], v1.position[i]), std::max(v2.position[i], v3.position[i]));
+    }
+}
+float getSurface(const AxisAlignedBox& boundary) { 
+    glm::vec3 t = boundary.upper - boundary.lower;
+    return 2.0 * (t.x * t.y + t.x * t.z + t.y * t.z);
+}
+std::tuple<int, int> SurfaceAreaHeuristics(Scene* pScene,std::vector<glm::vec4>& traingleIndex)
+{
+    int axis, optAxis,optIndex = -1;
+    long double optScore = 1e36;
+    int n = traingleIndex.size();
+    std::vector<float> l;
+    std::vector<float> r;
+    for (axis = 0; axis < 3; axis++) {
+        l.clear(), r.clear();
+        AxisAlignedBox leftBoundary,rightBoundary;
+        leftBoundary.lower = glm::vec3 { 1e9 };
+        leftBoundary.upper = glm::vec3 { -1e9 };
+        rightBoundary.lower = glm::vec3  { 1e9 };
+        rightBoundary.upper = glm::vec3 { -1e9 };
+        std::sort(traingleIndex.begin(), traingleIndex.end(), [&](const auto& x, const auto& y) {
+            Vertex v1 = pScene->meshes[x[0]].vertices[x[1]];
+            Vertex v2 = pScene->meshes[x[0]].vertices[x[2]];
+            Vertex v3 = pScene->meshes[x[0]].vertices[x[3]];
+            Vertex v4 = pScene->meshes[y[0]].vertices[y[1]];
+            Vertex v5 = pScene->meshes[y[0]].vertices[y[2]];
+            Vertex v6 = pScene->meshes[y[0]].vertices[y[3]];
+            return v1.position[axis] + v2.position[axis] + v3.position[axis]
+                < v4.position[axis] + v5.position[axis] + v6.position[axis];
+        });
+        for (int leftAmount = 1; leftAmount < n; leftAmount++) { 
+            glm::vec4 front = traingleIndex[leftAmount-1];
+            glm::vec4 back = traingleIndex[n - leftAmount];
+            updateAABB(
+                leftBoundary, pScene->meshes[front[0]].vertices[front[1]], pScene->meshes[front[0]].vertices[front[2]],
+                pScene->meshes[front[0]].vertices[front[3]]
+            );
+            updateAABB(
+                rightBoundary, pScene->meshes[back[0]].vertices[back[1]], pScene->meshes[back[0]].vertices[back[2]],
+                pScene->meshes[back[0]].vertices[back[3]]
+            );
+            l.push_back(getSurface(leftBoundary));
+            r.push_back(getSurface(rightBoundary));
+        }
+        for (int leftAmount = 1; leftAmount < n; leftAmount++) {
+            float s1 = l[leftAmount - 1];
+            float s2 = r[n - 1 - leftAmount];
+            float cur = s1 * leftAmount + s2 * (n - leftAmount);
+        //    std::cout << s1 << " " << s2 << " " << leftAmount << " " << cur << " " << optScore
+        //              << "\n ";
+            if (cur < optScore) {
+                optAxis = axis;
+                optIndex = leftAmount;
+                optScore = cur;
+            }
+        }
+
+    }
+    return std::make_tuple(optAxis,optIndex);
+}
+int treeConstruction(
+    std::vector<Node>& t, Scene* pScene, std::vector<glm::vec4>& traingleIndex, int depth,
+    const Features& features, int maxdepth = 10)
+{
     if (depth > maxdepth||traingleIndex.empty())
         return -1;
     Node node;
     node.boundary.lower = glm::vec3 { 1e9 };
     node.boundary.upper = glm::vec3 { -1e9 };
+    node.split.upper = glm::vec3 { 0.0f };
+    node.split.lower = glm::vec3 { 0.0f };
     for (auto t : traingleIndex) {
         Vertex v1 = pScene->meshes[t[0]].vertices[t[1]];
         Vertex v2 = pScene->meshes[t[0]].vertices[t[2]];
         Vertex v3 = pScene->meshes[t[0]].vertices[t[3]];
-        for (int i = 0; i < 3; i++) {
-            node.boundary.lower[i] = std::min(std::min(node.boundary.lower[i], v1.position[i]), std::min(v2.position[i], v3.position[i]));
-            node.boundary.upper[i] = std::max(std::max(node.boundary.upper[i], v1.position[i]), std::max(v2.position[i], v3.position[i]));
-        }
+        updateAABB(node.boundary, v1, v2, v3);
     }
     node.depth = depth;
     node.isleaf = false;
@@ -37,9 +108,18 @@ int treeConstruction(std::vector<Node>& t, Scene* pScene,std::vector<glm::vec4>&
         }
         return res;
     }
-    int median = traingleIndex.size() / 2;//median to the right child
-
+    int median = traingleIndex.size() / 2;
     int axis = depth % 3;
+    if (features.extra.enableBvhSahBinning)
+        std::tie(axis, median) = SurfaceAreaHeuristics(pScene,traingleIndex);
+    t[res].split = node.boundary;
+    glm::vec4 inx = traingleIndex[median];
+    Vertex r1 = pScene->meshes[inx[0]].vertices[inx[1]];
+    Vertex r2 = pScene->meshes[inx[0]].vertices[inx[2]];
+    Vertex r3 = pScene->meshes[inx[0]].vertices[inx[3]];
+    float sp = (r1.position[axis] + r2.position[axis], + r3.position[axis])/3.0;
+    t[res].split.lower[axis] = sp;
+    t[res].split.upper[axis] = sp;
     std::sort(
         traingleIndex.begin(),
         traingleIndex.end(),
@@ -52,13 +132,11 @@ int treeConstruction(std::vector<Node>& t, Scene* pScene,std::vector<glm::vec4>&
             Vertex v6 = pScene->meshes[y[0]].vertices[y[3]];
             return v1.position[axis] + v2.position[axis] + v3.position[axis] < v4.position[axis] + v5.position[axis] + v6.position[axis];
         });
-    std::vector<glm::vec4> leftcontent = { traingleIndex.begin(), traingleIndex.end() - median };
-    if (traingleIndex.size() % 2)
-        median++;
+    std::vector<glm::vec4> leftcontent = { traingleIndex.begin(), traingleIndex.begin() + median };
     std::vector<glm::vec4> rightcontent = { traingleIndex.begin() + median, traingleIndex.end() };
-    int v1 = treeConstruction(t, pScene, leftcontent, depth + 1,maxdepth);
+    int v1 = treeConstruction(t, pScene, leftcontent, depth + 1,features,maxdepth);
     t[res].children.push_back(v1);
-    int v2 = treeConstruction(t, pScene, rightcontent, depth + 1,maxdepth);
+    int v2 = treeConstruction(t, pScene, rightcontent, depth + 1,features,maxdepth);
     t[res].children.push_back(v2);
     if (t[res].children[0] == -1 && t[res].children[1] == -1) {
         t[res].children.clear();
@@ -70,9 +148,11 @@ int treeConstruction(std::vector<Node>& t, Scene* pScene,std::vector<glm::vec4>&
     }
     return res;
 }
-BoundingVolumeHierarchy::BoundingVolumeHierarchy(Scene* pScene)
+BoundingVolumeHierarchy::BoundingVolumeHierarchy(Scene* pScene, const Features& features)
     : m_pScene(pScene)
 {
+    using clock = std::chrono::high_resolution_clock;
+    const auto start = clock::now();
     tree.clear();
     std::vector<glm::vec4> traingleIndex;
     int ind = 0;
@@ -82,7 +162,10 @@ BoundingVolumeHierarchy::BoundingVolumeHierarchy(Scene* pScene)
         }
         ind++;
     }
-    treeConstruction(tree, pScene,traingleIndex,0);
+    treeConstruction(tree, pScene,traingleIndex,0,features);
+    const auto end = clock::now();
+    std::cout << "Time to create bvh: " << std::chrono::duration<float, std::milli>(end - start).count()
+              << " milliseconds" << std::endl;
 }
 
 // Return the depth of the tree that you constructed. This is used to tell the
@@ -127,7 +210,21 @@ void BoundingVolumeHierarchy::debugDrawLevel(int level)
   //  drawAABB(aabb, DrawMode::Filled, glm::vec3(0.05f, 1.0f, 0.05f), 0.1f);
 }
 
-
+void BoundingVolumeHierarchy::debugSplit(int level)
+{
+    // Draw the AABB as a transparent green box.
+    // AxisAlignedBox aabb{ glm::vec3(-0.05f), glm::vec3(0.05f, 1.05f, 1.05f) };
+    // drawShape(aabb, DrawMode::Filled, glm::vec3(0.0f, 1.0f, 0.0f), 0.2f);
+    for (Node node : tree) {
+        if (node.depth == level) {
+            drawAABB(node.split, DrawMode::Filled, glm::vec3(1.0f, 0.0f, 0.0f), 0.7f);
+        }
+    }
+    // Draw the AABB as a (white) wireframe box.
+    //  AxisAlignedBox aabb { glm::vec3(0.0f), glm::vec3(0.0f, 1.05f, 1.05f) };
+    // drawAABB(aabb, DrawMode::Wireframe);
+    //  drawAABB(aabb, DrawMode::Filled, glm::vec3(0.05f, 1.0f, 0.05f), 0.1f);
+}
 // Use this function to visualize your leaf nodes. This is useful for debugging. The function
 // receives the leaf node to be draw (think of the ith leaf node). Draw the AABB of the leaf node and all contained triangles.
 // You can draw the triangles with different colors. NoteL leafIdx is not the index in the node vector, it is the
@@ -233,6 +330,10 @@ bool BoundingVolumeHierarchy::intersect(Ray& ray, HitInfo& hitInfo, const Featur
                 float t = ray.t;
                 if (intersectRayWithShape(current.boundary, ray)) {
                     drawAABB(current.boundary, DrawMode::Wireframe, glm::vec3(1.0f, 1.0f, 1.0f), 0.7f);
+                    if (ray.t > t) {
+                        ray.t = t;
+                        continue;
+                    }
                     ray.t = t;
                     for (int i = 0; i < current.children.size(); i++)
                         if (current.children[i] != -1
