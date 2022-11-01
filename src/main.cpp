@@ -191,7 +191,16 @@ int main(int argc, char** argv)
                         "Glossy samples", &config.features.extra.glossySamples, 10, 1000, "%d",
                         ImGuiSliderFlags_Logarithmic
                     );
+
                 ImGui::Checkbox("Transparency", &config.features.extra.enableTransparency);
+                if (config.features.extra.enableTransparency) {
+                    ImGui::Checkbox("Translucency", &config.features.extra.enableTranslucency);
+                    if (config.features.extra.enableTransparency)
+                        ImGui::SliderInt(
+                            "Translucent samples", &config.features.extra.translucentSamples, 10, 1000, "%d",
+                            ImGuiSliderFlags_Logarithmic
+                        );
+                }
 
                 ImGui::Checkbox("Depth of field", &config.features.extra.enableDepthOfField);
                 if (config.features.extra.enableDepthOfField) {

@@ -68,6 +68,8 @@ struct ExtraFeatures {
     int glossySamples = 100;
 
     bool enableTransparency = false;
+    bool enableTranslucency = false;
+    int translucentSamples = 100;
 
     bool enableDepthOfField = false;
     int DOFSamples = 500;
@@ -85,7 +87,7 @@ struct Features {
 
     bool enableSoftShadow = false;
     bool dynamicSamples = true;
-    int samplesSegment = 100000;
+    int samplesSegment = 1000;
     int samplesParallel = 1000;
 
     bool enableNormalInterp = false;

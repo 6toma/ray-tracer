@@ -25,21 +25,58 @@ glm::vec3 getFinalColor(const Scene& scene, const BvhInterface& bvh, Ray ray, co
         glm::vec3 Lo = computeLightContribution(scene, bvh, features, ray, hitInfo);
 
         if (features.enableRecursive && rayDepth < features.maxRayDepth) {
-            Ray reflection = computeReflectionRay(ray, hitInfo);
-            glm::vec3 reflectedColor(0);
-
             if (hitInfo.material.transparency < 1 && features.extra.enableTransparency) {
                 Ray trans {
                     ray.origin + ray.direction * ray.t * 1.000001f,
                     ray.direction,
                     std::numeric_limits<float>::max(),
                 };
+                glm::vec3 transColor(0);
 
-                Lo = Lo * hitInfo.material.transparency
-                    + getFinalColor(scene, bvh, trans, features, rayDepth + 1) * (1 - hitInfo.material.transparency); 
+                if (features.extra.enableTranslucency) {
+                    glm::vec3 transX = (trans.direction == glm::vec3(1, 0, 0))
+                        ? glm::normalize(glm::cross(trans.direction, glm::vec3(0, 0, 1)))
+                        : glm::normalize(glm::cross(trans.direction, glm::vec3(1, 0, 0)));
+
+                    glm::vec3 transY = glm::cross(trans.direction, transX);
+
+                    int goodSamples = 0;
+                    for (int i = 0; i < features.extra.translucentSamples; i++) {
+                        float theta = to_double(next_rand()) * 2 * std::numbers::pi;
+                        float r = std::sqrt(to_double(next_rand()));
+
+                        if (enableDebugDraw) {
+                            theta = to_double(next_rand(rand_state)) * 2 * std::numbers::pi;
+                            r = std::sqrt(to_double(next_rand(rand_state)));
+                        }
+
+                        Ray translucent {
+                            trans.origin,
+                            trans.direction
+                                + (transX * cos(theta) + transY * sin(theta)) * r / hitInfo.material.shininess,
+                            std::numeric_limits<float>::max(),
+                        };
+
+                        translucent.origin += 0.000001f * translucent.direction;
+
+                        if (std::signbit(dot(translucent.direction, hitInfo.normal))
+                            == std::signbit(dot(trans.direction, hitInfo.normal))) {
+                            transColor += getFinalColor(scene, bvh, translucent, features, rayDepth + 1);
+                            goodSamples++;
+                        }
+                    }
+                    transColor /= goodSamples;
+                    Lo = Lo * hitInfo.material.transparency + transColor * (1 - hitInfo.material.transparency);
+                } else
+                    Lo = Lo * hitInfo.material.transparency
+                        + getFinalColor(scene, bvh, trans, features, rayDepth + 1)
+                            * (1 - hitInfo.material.transparency);
             }
 
             if (hitInfo.material.ks != glm::vec3(0)) {
+                Ray reflection = computeReflectionRay(ray, hitInfo);
+                glm::vec3 reflectedColor(0);
+
                 if (features.extra.enableGlossyReflection) {
                     glm::vec3 reflectionX = (reflection.direction == glm::vec3(1, 0, 0))
                         ? glm::normalize(glm::cross(reflection.direction, glm::vec3(0, 0, 1)))
@@ -49,29 +86,6 @@ glm::vec3 getFinalColor(const Scene& scene, const BvhInterface& bvh, Ray ray, co
 
                     int goodSamples = 0;
                     for (int i = 0; i < features.extra.glossySamples; i++) {
-                        /*
-
-                        // Phong shading sampling style
-
-                        float altitude = pow(to_double(next_rand()), hitInfo.material.shininess) * std::numbers::pi;
-                        float azimuth = to_double(next_rand()) * 2 * std::numbers::pi;
-
-                        if (enableDebugDraw) {
-                            altitude = pow(to_double(next_rand(rand_state)), hitInfo.material.shininess) *
-                        std::numbers::pi; azimuth = to_double(next_rand(rand_state)) * 2 * std::numbers::pi;
-                        }
-
-                        Ray gloss {
-                            reflection.origin,
-                            (reflectionX * cos(azimuth) + reflectionY * sin(azimuth)) * sin(altitude)
-                                + reflection.direction * cos(altitude),
-                            std::numeric_limits<float>::max(),
-                        };
-
-                        */
-
-                        // Circle sampling, radius = 1 / shininess
-
                         float theta = to_double(next_rand()) * 2 * std::numbers::pi;
                         float r = std::sqrt(to_double(next_rand()));
 
@@ -113,7 +127,7 @@ glm::vec3 getFinalColor(const Scene& scene, const BvhInterface& bvh, Ray ray, co
             drawNormal(ray, hitInfo);
 
         // Draw shadow rays
-        //if (features.enableHardShadow)
+        // if (features.enableHardShadow)
         //    drawShadowRays(ray, scene, bvh, features);
 
         // Set the color of the pixel if the ray hits.
@@ -198,7 +212,7 @@ glm::vec3 DOFColor(
 
 // For later use, dw abt this
 // Calculates the ratio between reflection and refraction
-//float fresnel(const Ray& ray, const HitInfo& hitInfo, float IORfrom, float IORto)
+// float fresnel(const Ray& ray, const HitInfo& hitInfo, float IORfrom, float IORto)
 //{
 //    // Shlick's approximation for Fresnel
 //    float r0 = ((IORfrom - IORto) * (IORfrom - IORto)) / ((IORfrom + IORto) * (IORfrom + IORto));
