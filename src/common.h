@@ -85,6 +85,8 @@ struct Features {
     bool enableTextureMapping = false;
     bool enableAccelStructure = false;
 
+    bool intersectedButNotVisitedNodes = false;
+
     ExtraFeatures extra = {};
 };
 struct MotionBlurSetting {
