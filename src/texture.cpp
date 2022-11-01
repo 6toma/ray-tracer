@@ -12,8 +12,8 @@ glm::vec3 acquireTexel(const Image& image, const glm::vec2& texCoord, const Feat
     // you can convert from position (i,j) to an index using the method seen in the lecture
     // Note, the center of the first pixel is at image coordinates (0.5, 0.5)
     
-    glm::vec2 scaledTexCoord = { texCoord.x * (image.width - 1), texCoord.y * (image.height - 1) };
-    return image.pixels[scaledTexCoord.x * (image.width + scaledTexCoord.y)];
+    glm::vec2 scaledTexCoord = { std::floor(texCoord.x * (image.width-1)+0.5), std::floor(texCoord.y * (image.height-1)+0.5) };
+    return image.pixels[scaledTexCoord.x + (image.width * (image.height - scaledTexCoord.y-1))];
 }
 glm::vec3 acquireTexelEnvironment(const Image& image, const glm::vec3& direction, const Features& features)
 {
