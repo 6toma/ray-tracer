@@ -11,7 +11,8 @@ DISABLE_WARNINGS_POP()
 #include <limits>
 
 bool pointInTriangle(
-    const glm::vec3& v0, const glm::vec3& v1, const glm::vec3& v2, const glm::vec3& n, const glm::vec3& p)
+    const glm::vec3& v0, const glm::vec3& v1, const glm::vec3& v2, const glm::vec3& n, const glm::vec3& p
+)
 {
     glm::vec3 ab = glm::cross(n, v1 - v0);
     glm::vec3 bc = glm::cross(n, v2 - v1);
@@ -36,8 +37,8 @@ bool pointInTriangle(
 bool intersectRayWithPlane(const Plane& plane, Ray& ray)
 {
     if ((glm::dot(ray.direction, plane.normal) < 0 && glm::dot(plane.D * plane.normal - ray.origin, plane.normal) < 0)
-        || (glm::dot(ray.direction, plane.normal) > 0
-            && glm::dot(plane.D * plane.normal - ray.origin, plane.normal) > 0)) {
+        || (glm::dot(ray.direction, plane.normal) > 0 && glm::dot(plane.D * plane.normal - ray.origin, plane.normal) > 0
+        )) {
         ray.t = (plane.D - glm::dot(plane.normal, ray.origin)) / glm::dot(plane.normal, ray.direction);
         return true;
     }
@@ -117,7 +118,7 @@ bool intersectRayWithShape(const Sphere& sphere, Ray& ray, HitInfo& hitInfo)
         if (ray.t == 0) {
             ray.t = t; // revert ray.t if no intersection
             return false;
-        } 
+        }
         hitInfo.normal = glm::normalize(ray.origin + ray.direction * ray.t - sphere.center);
         hitInfo.material = sphere.material;
         return true;
@@ -130,7 +131,7 @@ bool intersectRayWithShape(const Sphere& sphere, Ray& ray, HitInfo& hitInfo)
         else
             t = std::min(t1, t2);
         if (ray.t == 0 || ray.t < t) {
-            //ray.t = t; // revert ray.t if no intersection
+            // ray.t = t; // revert ray.t if no intersection
             return false;
         }
         ray.t = t;
@@ -165,7 +166,7 @@ bool intersectRayWithShape(const AxisAlignedBox& box, Ray& ray)
     /*if (tin > tout || tout < 0)
         return false;
 
-    if (tin < 0) 
+    if (tin < 0)
         ray.t = std::min(tout, ray.t);
     else
         ray.t = std::min(tin, ray.t);

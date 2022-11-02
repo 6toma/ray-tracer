@@ -10,7 +10,6 @@
 #endif
 #include <iostream>
 #include <numbers>
-MotionBlurSetting motionBlurSetting {};
 
 static const std::filesystem::path dataDirPath { DATA_DIR };
 Image img(dataDirPath / "lake.png");
@@ -181,15 +180,15 @@ void renderRayTracing(
             glm::vec3 pixelColor { 0.0f };
             if (features.extra.enableMotionBlur) {
                 int sampleAmount = 200;
-                float cof = 1.0 / (float)(sampleAmount);
                 for (int i = 0; i < sampleAmount; i++) {
-                    float r = -static_cast<float>(rand()) / static_cast<float>(RAND_MAX) * motionBlurSetting.speed;
-                    glm::vec3 offset = motionBlurSetting.movingDirection * r;
+                    float r = -static_cast<float>(rand()) / static_cast<float>(RAND_MAX) * features.extra.motionSpeed;
+                    glm::vec3 offset = features.extra.motionDirection * r;
                     cameraRay.origin += offset;
                     pixelColor
-                        += DOFColor(scene, bvh, focalPlane, cameraRay, features, glm::mat2x3(apertureX, apertureY)) * cof;
+                        += DOFColor(scene, bvh, focalPlane, cameraRay, features, glm::mat2x3(apertureX, apertureY));
                     cameraRay.origin -= offset;
                 }
+                pixelColor /= sampleAmount;
             } else
                 pixelColor = DOFColor(scene, bvh, focalPlane, cameraRay, features, glm::mat2x3(apertureX, apertureY));
             screen.setPixel(x, y, pixelColor);
