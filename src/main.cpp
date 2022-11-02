@@ -71,6 +71,7 @@ int main(int argc, char** argv)
         int bvhDebugLevel = 0;
         int bvhDebugLeaf = 0;
         int normalDebugLevel = 0;
+        int benchmarkRenders = 10;
         bool debugBVHLevel { false };
         bool debugBVHLeaf { false };
         bool debugNormals { false };
@@ -260,6 +261,30 @@ int main(int argc, char** argv)
                     screen.writeBitmapToFile(outPath);
                 }
             }
+            if (ImGui::Button("Benchmark")) {
+                float t = 0;
+                for (int i = 0; i < benchmarkRenders; i++) {
+                    // Perform a new render and measure the time it took to generate the image.
+                    using clock = std::chrono::high_resolution_clock;
+                    const auto start = clock::now();
+                    renderRayTracing(scene, camera, bvh, screen, config.features);
+                    const auto end = clock::now();
+                    t += std::chrono::duration<float, std::milli>(end - start).count();
+                }
+                t /= benchmarkRenders;
+                std::cout << "Avg. time to render image over " << benchmarkRenders << " iterations: " << t
+                          << " milliseconds";
+                if (t >= 3600000) {
+                    std::cout << " or " << t / 3600000 << " hours";
+                } else if (t >= 60000) {
+                    std::cout << " or " << t / 60000 << " minutes";
+                } else if (t >= 1000) {
+                    std::cout << " or " << t / 1000 << " seconds";
+                }
+                std::cout << std::endl;
+            }
+            ImGui::SliderInt("# of benchmark renders", &benchmarkRenders, 1, 50);
+
             ImGui::Spacing();
             ImGui::Separator();
             ImGui::Text("Debugging");
