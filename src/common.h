@@ -58,7 +58,11 @@ struct DebugFeatures {
 struct ExtraFeatures {
     bool enableEnvironmentMapping = false;
     bool enableBvhSahBinning = false;
+
     bool enableMotionBlur = false;
+    glm::vec3 motionDirection { 0.0f };
+    float motionSpeed = 0;
+
     bool enableBloomEffect = false;
     bool enableBilinearTextureFiltering = false;
     bool enableMipmapTextureFiltering = false;
@@ -99,9 +103,4 @@ struct Features {
     ExtraFeatures extra = {};
 
     DebugFeatures debug = {};
-};
-
-struct MotionBlurSetting {
-    glm::vec3 movingDirection { 0.0f };
-    float speed = 0;
 };

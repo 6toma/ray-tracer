@@ -30,10 +30,7 @@ DISABLE_WARNINGS_POP()
 #include <variant>
 
 // This is the main application. The code in here does not need to be modified.
-enum class ViewMode {
-    Rasterization = 0,
-    RayTracing = 1
-};
+enum class ViewMode { Rasterization = 0, RayTracing = 1 };
 
 int debugBVHLeafId = 0;
 
@@ -60,7 +57,9 @@ int main(int argc, char** argv)
         Window window { "Final Project", config.windowSize, OpenGLVersion::GL2, true };
         Screen screen { config.windowSize, true };
         Trackball camera { &window, glm::radians(config.cameras[0].fieldOfView), config.cameras[0].distanceFromLookAt };
-        camera.setCamera(config.cameras[0].lookAt, glm::radians(config.cameras[0].rotation), config.cameras[0].distanceFromLookAt);
+        camera.setCamera(
+            config.cameras[0].lookAt, glm::radians(config.cameras[0].rotation), config.cameras[0].distanceFromLookAt
+        );
 
         SceneType sceneType { SceneType::SingleTriangle };
         std::optional<Ray> optDebugRay;
@@ -72,6 +71,7 @@ int main(int argc, char** argv)
         int bvhDebugLevel = 0;
         int bvhDebugLeaf = 0;
         int normalDebugLevel = 0;
+        int benchmarkRenders = 10;
         bool debugBVHLevel { false };
         bool debugBVHLeaf { false };
         bool debugNormals { false };
@@ -89,8 +89,7 @@ int main(int argc, char** argv)
 
                     focalPlane = {
                         glm::dot(
-                            camera.position() + camera.forward() * config.features.extra.focalLength,
-                            camera.forward()
+                            camera.position() + camera.forward() * config.features.extra.focalLength, camera.forward()
                         ),
                         camera.forward(),
                     };
@@ -185,7 +184,9 @@ int main(int argc, char** argv)
                 ImGui::Checkbox("Environment mapping", &config.features.extra.enableEnvironmentMapping);
                 ImGui::Checkbox("BVH SAH binning", &config.features.extra.enableBvhSahBinning);
                 ImGui::Checkbox("Bloom effect", &config.features.extra.enableBloomEffect);
-                ImGui::Checkbox("Texture filtering(bilinear interpolation)", &config.features.extra.enableBilinearTextureFiltering);
+                ImGui::Checkbox(
+                    "Texture filtering(bilinear interpolation)", &config.features.extra.enableBilinearTextureFiltering
+                );
                 ImGui::Checkbox("Texture filtering(mipmapping)", &config.features.extra.enableMipmapTextureFiltering);
                 ImGui::Checkbox("Glossy reflections", &config.features.extra.enableGlossyReflection);
                 if (config.features.extra.enableGlossyReflection)
@@ -216,9 +217,9 @@ int main(int argc, char** argv)
                 ImGui::Checkbox("Motion Blur", &config.features.extra.enableMotionBlur);
                 if (config.features.extra.enableMotionBlur) {
                     ImGui::DragFloat3(
-                        "Moving Direction", glm::value_ptr(motionBlurSetting.movingDirection), 0.05f, -1.0f, 1.0f);
-                    ImGui::InputFloat(
-                        "Speed", &motionBlurSetting.speed, 0.01f, 0.01f, "%0.2f");
+                        "Moving Direction", glm::value_ptr(config.features.extra.motionDirection), 0.05f, -1.0f, 1.0f
+                    );
+                    ImGui::InputFloat("Speed", &config.features.extra.motionSpeed, 0.01f, 0.01f, "%0.2f");
                 }
             }
             ImGui::Separator();
@@ -230,7 +231,9 @@ int main(int argc, char** argv)
                 auto distance = camera.distanceFromLookAt();
                 ImGui::InputFloat3("Position", glm::value_ptr(position), "%0.2f", ImGuiInputTextFlags_ReadOnly);
                 ImGui::InputFloat3("LookAt", glm::value_ptr(lookAt), "%0.2f", ImGuiInputTextFlags_ReadOnly);
-                ImGui::InputFloat("Distance from look at", &distance, 0.1f, 0.1f, "%0.2f", ImGuiInputTextFlags_ReadOnly);
+                ImGui::InputFloat(
+                    "Distance from look at", &distance, 0.1f, 0.1f, "%0.2f", ImGuiInputTextFlags_ReadOnly
+                );
                 ImGui::InputFloat3("Rotation", glm::value_ptr(rotation), "%0.2f", ImGuiInputTextFlags_ReadOnly);
                 ImGui::TreePop();
             }
@@ -251,11 +254,37 @@ int main(int argc, char** argv)
                     const auto start = clock::now();
                     renderRayTracing(scene, camera, bvh, screen, config.features);
                     const auto end = clock::now();
-                    std::cout << "Time to render image: " << std::chrono::duration<float, std::milli>(end - start).count() << " milliseconds" << std::endl;
+                    std::cout << "Time to render image: "
+                              << std::chrono::duration<float, std::milli>(end - start).count() << " milliseconds"
+                              << std::endl;
                     // Store the new image.
                     screen.writeBitmapToFile(outPath);
                 }
             }
+            if (ImGui::Button("Benchmark")) {
+                float t = 0;
+                for (int i = 0; i < benchmarkRenders; i++) {
+                    // Perform a new render and measure the time it took to generate the image.
+                    using clock = std::chrono::high_resolution_clock;
+                    const auto start = clock::now();
+                    renderRayTracing(scene, camera, bvh, screen, config.features);
+                    const auto end = clock::now();
+                    t += std::chrono::duration<float, std::milli>(end - start).count();
+                }
+                t /= benchmarkRenders;
+                std::cout << "Avg. time to render image over " << benchmarkRenders << " iterations: " << t
+                          << " milliseconds";
+                if (t >= 3600000) {
+                    std::cout << " or " << t / 3600000 << " hours";
+                } else if (t >= 60000) {
+                    std::cout << " or " << t / 60000 << " minutes";
+                } else if (t >= 1000) {
+                    std::cout << " or " << t / 1000 << " seconds";
+                }
+                std::cout << std::endl;
+            }
+            ImGui::SliderInt("# of benchmark renders", &benchmarkRenders, 1, 50);
+
             ImGui::Spacing();
             ImGui::Separator();
             ImGui::Text("Debugging");
@@ -290,11 +319,17 @@ int main(int argc, char** argv)
                     options.push_back("Light " + std::to_string(i));
                 }
                 std::vector<const char*> optionsPointers;
-                std::transform(std::begin(options), std::end(options), std::back_inserter(optionsPointers), [](const auto& str) { return str.c_str(); });
+                std::transform(
+                    std::begin(options), std::end(options), std::back_inserter(optionsPointers),
+                    [](const auto& str) { return str.c_str(); }
+                );
 
                 // Offset such that selectedLightIdx=-1 becomes item 0 (None).
                 ++selectedLightIdx;
-                ImGui::Combo("Selected light", &selectedLightIdx, optionsPointers.data(), static_cast<int>(optionsPointers.size()));
+                ImGui::Combo(
+                    "Selected light", &selectedLightIdx, optionsPointers.data(),
+                    static_cast<int>(optionsPointers.size())
+                );
                 --selectedLightIdx;
 
                 if (selectedLightIdx >= 0) {
@@ -302,7 +337,9 @@ int main(int argc, char** argv)
                     std::visit(
                         make_visitor(
                             [&](PointLight& light) {
-                                showImGuizmoTranslation(window, camera, light.position); // 3D controls to translate light source.
+                                showImGuizmoTranslation(
+                                    window, camera, light.position
+                                ); // 3D controls to translate light source.
                                 ImGui::DragFloat3("Light position", glm::value_ptr(light.position), 0.01f, -3.0f, 3.0f);
                                 ImGui::ColorEdit3("Light color", glm::value_ptr(light.color));
                             },
@@ -315,7 +352,10 @@ int main(int argc, char** argv)
                                     showImGuizmoTranslation(window, camera, light.endpoint1);
 
                                 const std::array<const char*, 2> endpointOptions { "Endpoint 0", "Endpoint 1" };
-                                ImGui::Combo("Selected endpoint", &selectedEndpoint, endpointOptions.data(), int(endpointOptions.size()));
+                                ImGui::Combo(
+                                    "Selected endpoint", &selectedEndpoint, endpointOptions.data(),
+                                    int(endpointOptions.size())
+                                );
                                 ImGui::DragFloat3("Endpoint 0", glm::value_ptr(light.endpoint0), 0.01f, -3.0f, 3.0f);
                                 ImGui::DragFloat3("Endpoint 1", glm::value_ptr(light.endpoint1), 0.01f, -3.0f, 3.0f);
                                 ImGui::ColorEdit3("Color 0", glm::value_ptr(light.color0));
@@ -335,7 +375,9 @@ int main(int argc, char** argv)
                                     showImGuizmoTranslation(window, camera, vertex2);
 
                                 const std::array<const char*, 3> vertexOptions { "Vertex 0", "Vertex 1", "Vertex 2" };
-                                ImGui::Combo("Selected vertex", &selectedVertex, vertexOptions.data(), int(vertexOptions.size()));
+                                ImGui::Combo(
+                                    "Selected vertex", &selectedVertex, vertexOptions.data(), int(vertexOptions.size())
+                                );
                                 ImGui::DragFloat3("Vertex 0", glm::value_ptr(light.v0), 0.01f, -3.0f, 3.0f);
                                 ImGui::DragFloat3("Vertex 1", glm::value_ptr(vertex1), 0.01f, -3.0f, 3.0f);
                                 light.edge01 = vertex1 - light.v0;
@@ -347,8 +389,10 @@ int main(int argc, char** argv)
                                 ImGui::ColorEdit3("Color 2", glm::value_ptr(light.color2));
                                 ImGui::ColorEdit3("Color 3", glm::value_ptr(light.color3));
                             },
-                            [](auto) { /* any other type of light */ }),
-                        scene.lights[size_t(selectedLightIdx)]);
+                            [](auto) { /* any other type of light */ }
+                        ),
+                        scene.lights[size_t(selectedLightIdx)]
+                    );
                 }
             }
 
@@ -358,7 +402,10 @@ int main(int argc, char** argv)
             }
             if (ImGui::Button("Add segment light")) {
                 selectedLightIdx = int(scene.lights.size());
-                scene.lights.emplace_back(SegmentLight { .endpoint0 = glm::vec3(0.0f), .endpoint1 = glm::vec3(1.0f), .color0 = glm::vec3(1, 0, 0), .color1 = glm::vec3(0, 0, 1) });
+                scene.lights.emplace_back(SegmentLight { .endpoint0 = glm::vec3(0.0f),
+                                                         .endpoint1 = glm::vec3(1.0f),
+                                                         .color0 = glm::vec3(1, 0, 0),
+                                                         .color1 = glm::vec3(0, 0, 1) });
             }
             if (ImGui::Button("Add parallelogram light")) {
                 selectedLightIdx = int(scene.lights.size());
@@ -422,8 +469,9 @@ int main(int argc, char** argv)
                     enableDebugDraw = true;
                     glDisable(GL_LIGHTING);
                     glDepthFunc(GL_LEQUAL);
-                    glm::vec3 length = 10*motionBlurSetting.speed * glm::normalize(motionBlurSetting.movingDirection);
-                    drawLine(glm::vec3 { 0.0f }, length, glm::vec3 {1.0f});
+                    glm::vec3 length = 10 * config.features.extra.motionSpeed
+                        * glm::normalize(config.features.extra.motionDirection);
+                    drawLine(glm::vec3 { 0.0f }, length, glm::vec3 { 1.0f });
                     enableDebugDraw = false;
                 }
                 glPopAttrib();
@@ -478,16 +526,19 @@ int main(int argc, char** argv)
         // Load scene.
         Scene scene;
         std::string sceneName;
-        std::visit(make_visitor(
-                       [&](const std::filesystem::path& path) {
-                           scene = loadSceneFromFile(path, config.lights);
-                           sceneName = path.stem().string();
-                       },
-                       [&](const SceneType& type) {
-                           scene = loadScenePrebuilt(type, config.dataPath);
-                           sceneName = serialize(type);
-                       }),
-            config.scene);
+        std::visit(
+            make_visitor(
+                [&](const std::filesystem::path& path) {
+                    scene = loadSceneFromFile(path, config.lights);
+                    sceneName = path.stem().string();
+                },
+                [&](const SceneType& type) {
+                    scene = loadScenePrebuilt(type, config.dataPath);
+                    sceneName = serialize(type);
+                }
+            ),
+            config.scene
+        );
 
         BvhInterface bvh { &scene, config.features };
 
@@ -502,18 +553,23 @@ int main(int argc, char** argv)
         std::vector<std::thread> workers;
 
         for (int i = 0; auto const& cameraConfig : config.cameras) {
-            workers.emplace_back(std::thread([&](int index) {
-                Screen screen { config.windowSize, false };
-                screen.clear(glm::vec3(0.0f));
-                Trackball camera { &window, glm::radians(cameraConfig.fieldOfView), cameraConfig.distanceFromLookAt };
-                camera.setCamera(cameraConfig.lookAt, glm::radians(cameraConfig.rotation), cameraConfig.distanceFromLookAt);
-                renderRayTracing(scene, camera, bvh, screen, config.features);
-                const auto filename_base = fmt::format("{}_{}_cam_{}", sceneName, start_time_string, index);
-                const auto filepath = config.outputDir / (filename_base + ".bmp");
-                fmt::print("Image {} saved to {}\n", index, filepath.string());
-                screen.writeBitmapToFile(filepath);
-            },
-                i));
+            workers.emplace_back(std::thread(
+                [&](int index) {
+                    Screen screen { config.windowSize, false };
+                    screen.clear(glm::vec3(0.0f));
+                    Trackball camera { &window, glm::radians(cameraConfig.fieldOfView),
+                                       cameraConfig.distanceFromLookAt };
+                    camera.setCamera(
+                        cameraConfig.lookAt, glm::radians(cameraConfig.rotation), cameraConfig.distanceFromLookAt
+                    );
+                    renderRayTracing(scene, camera, bvh, screen, config.features);
+                    const auto filename_base = fmt::format("{}_{}_cam_{}", sceneName, start_time_string, index);
+                    const auto filepath = config.outputDir / (filename_base + ".bmp");
+                    fmt::print("Image {} saved to {}\n", index, filepath.string());
+                    screen.writeBitmapToFile(filepath);
+                },
+                i
+            ));
             ++i;
         }
         for (auto& worker : workers) {
@@ -586,8 +642,10 @@ static void drawLightsOpenGL(const Scene& scene, const Trackball& camera, int /*
                     glEnd();
                     glPopAttrib();
                 },
-                [](auto) { /* any other type of light */ }),
-            scene.lights[i]);
+                [](auto) { /* any other type of light */ }
+            ),
+            scene.lights[i]
+        );
     }
 
     // Draw a colored sphere at the location at which the trackball is looking/rotating around.
@@ -624,9 +682,7 @@ void drawSceneOpenGL(const Scene& scene)
     for (const auto& light : scene.lights) {
         std::visit(
             make_visitor(
-                [&](const PointLight& pointLight) {
-                    enableLight(pointLight.position, pointLight.color);
-                },
+                [&](const PointLight& pointLight) { enableLight(pointLight.position, pointLight.color); },
                 [&](const SegmentLight& segmentLight) {
                     // Approximate with two point lights: one at each endpoint.
                     enableLight(segmentLight.endpoint0, 0.5f * segmentLight.color0);
@@ -636,10 +692,15 @@ void drawSceneOpenGL(const Scene& scene)
                     enableLight(parallelogramLight.v0, 0.25f * parallelogramLight.color0);
                     enableLight(parallelogramLight.v0 + parallelogramLight.edge01, 0.25f * parallelogramLight.color1);
                     enableLight(parallelogramLight.v0 + parallelogramLight.edge02, 0.25f * parallelogramLight.color2);
-                    enableLight(parallelogramLight.v0 + parallelogramLight.edge01 + parallelogramLight.edge02, 0.25f * parallelogramLight.color3);
+                    enableLight(
+                        parallelogramLight.v0 + parallelogramLight.edge01 + parallelogramLight.edge02,
+                        0.25f * parallelogramLight.color3
+                    );
                 },
-                [](auto) { /* any other type of light */ }),
-            light);
+                [](auto) { /* any other type of light */ }
+            ),
+            light
+        );
     }
 
     // Draw the scene and the ray (if any).
