@@ -41,6 +41,7 @@ static void setOpenGLMatrices(const Trackball& camera);
 static void drawLightsOpenGL(const Scene& scene, const Trackball& camera, int selectedLight);
 static void drawSceneOpenGL(const Scene& scene);
 bool sliderIntSquarePower(const char* label, int* v, int v_min, int v_max);
+
 int main(int argc, char** argv)
 {
     Config config = {};
@@ -88,7 +89,7 @@ int main(int argc, char** argv)
 
                     focalPlane = {
                         glm::dot(
-                            camera.position() + camera.forward() * glm::vec3(config.features.extra.focalLength),
+                            camera.position() + camera.forward() * config.features.extra.focalLength,
                             camera.forward()
                         ),
                         camera.forward(),
@@ -133,7 +134,7 @@ int main(int argc, char** argv)
                     "Teapot",
                     "Dragon",
                     /* "AABBs",*/ "Spheres", /*"Mixed",*/
-                    "Custom",
+                    "Theatre",
                 };
                 if (ImGui::Combo("Scenes", reinterpret_cast<int*>(&sceneType), items.data(), int(items.size()))) {
                     optDebugRay.reset();
@@ -157,7 +158,7 @@ int main(int argc, char** argv)
 
                 ImGui::Checkbox("Recursive (reflections)", &config.features.enableRecursive);
                 if (config.features.enableRecursive)
-                    ImGui::SliderInt("Samples per segment light", &config.features.samplesParallel, 0, 50);
+                    ImGui::SliderInt("Max depth", &config.features.maxRayDepth, 0, 50);
 
                 ImGui::Checkbox("Hard shadows", &config.features.enableHardShadow);
 
@@ -187,7 +188,21 @@ int main(int argc, char** argv)
                 ImGui::Checkbox("Texture filtering(bilinear interpolation)", &config.features.extra.enableBilinearTextureFiltering);
                 ImGui::Checkbox("Texture filtering(mipmapping)", &config.features.extra.enableMipmapTextureFiltering);
                 ImGui::Checkbox("Glossy reflections", &config.features.extra.enableGlossyReflection);
+                if (config.features.extra.enableGlossyReflection)
+                    ImGui::SliderInt(
+                        "Glossy samples", &config.features.extra.glossySamples, 10, 1000, "%d",
+                        ImGuiSliderFlags_Logarithmic
+                    );
+
                 ImGui::Checkbox("Transparency", &config.features.extra.enableTransparency);
+                if (config.features.extra.enableTransparency) {
+                    ImGui::Checkbox("Translucency", &config.features.extra.enableTranslucency);
+                    if (config.features.extra.enableTransparency)
+                        ImGui::SliderInt(
+                            "Translucent samples", &config.features.extra.translucentSamples, 10, 1000, "%d",
+                            ImGuiSliderFlags_Logarithmic
+                        );
+                }
 
                 ImGui::Checkbox("Depth of field", &config.features.extra.enableDepthOfField);
                 if (config.features.extra.enableDepthOfField) {
@@ -252,14 +267,17 @@ int main(int argc, char** argv)
                 if (debugBVHLeaf)
                     ImGui::SliderInt("BVH Leaf", &bvhDebugLeaf, 1, bvh.numLeaves());
                 ImGui::Checkbox("Draw split plane", &debugSplit);
-                ImGui::Checkbox("Draw normals", &debugNormals);
-                if (debugNormals)
-                    ImGui::SliderInt("Normal interpolation level", &normalDebugLevel, 0, 2);
-                ImGui::Checkbox("Draw Motion", &debugMotionBlur);
                 ImGui::Checkbox(
                     "Draw intersected but not visited nodes with a different colour (BVH Traversal)",
                     &config.features.intersectedButNotVisitedNodes
                 );
+
+                ImGui::Checkbox("Draw hit normals", &config.features.debug.drawHitNormal);
+                ImGui::Checkbox("Draw mesh normals", &debugNormals);
+                if (debugNormals)
+                    ImGui::SliderInt("Normal interpolation level", &normalDebugLevel, 0, 2);
+
+                ImGui::Checkbox("Draw Motion", &debugMotionBlur);
             }
 
             ImGui::Spacing();

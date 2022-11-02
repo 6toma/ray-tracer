@@ -129,11 +129,11 @@ bool intersectRayWithShape(const Sphere& sphere, Ray& ray, HitInfo& hitInfo)
             t = t1;
         else
             t = std::min(t1, t2);
-        ray.t = std::min(t, ray.t);
-        if (ray.t == 0) {
-            ray.t = t; // revert ray.t if no intersection
+        if (ray.t == 0 || ray.t < t) {
+            //ray.t = t; // revert ray.t if no intersection
             return false;
         }
+        ray.t = t;
         hitInfo.normal = glm::normalize(ray.origin + ray.direction * ray.t - sphere.center);
         hitInfo.material = sphere.material;
         return true;

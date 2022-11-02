@@ -52,8 +52,8 @@ static std::ostream& operator<<(std::ostream& os, const SceneType& sceneType)
         os << "SceneType::Spheres";
         break;
     }
-    case SceneType::Custom: {
-        os << "SceneType::Custom";
+    case SceneType::Theatre: {
+        os << "SceneType::Theatre";
         break;
     }
     }
@@ -394,8 +394,8 @@ std::string serialize(const SceneType& sceneType)
         return "dragon";
     case SceneType::Spheres:
         return "spheres";
-    case SceneType::Custom:
-        return "custom";
+    case SceneType::Theatre:
+        return "theatre";
     default:
         return "unknown";
     }
@@ -423,8 +423,8 @@ std::optional<SceneType> deserialize(const std::string& sceneTypeStr)
         return SceneType::Dragon;
     } else if (lowered == "spheres") {
         return SceneType::Spheres;
-    } else if (lowered == "custom") {
-        return SceneType::Custom;
+    } else if (lowered == "theatre") {
+        return SceneType::Theatre;
     } else {
         return std::nullopt;
     }

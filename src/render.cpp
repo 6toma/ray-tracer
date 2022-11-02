@@ -19,34 +19,127 @@ glm::vec3 getFinalColor(const Scene& scene, const BvhInterface& bvh, Ray ray, co
     HitInfo hitInfo;
     if (bvh.intersect(ray, hitInfo, features)) {
 
+        uint64_t rand_state[4] {
+            ray.origin.x * 1000,
+            ray.origin.y * 1000,
+            ray.direction.x * 1000,
+            rayDepth * 1000,
+        };
+
         glm::vec3 Lo = computeLightContribution(scene, bvh, features, ray, hitInfo);
 
-        if (features.enableRecursive && rayDepth < features.maxRayDepth && hitInfo.material.ks != glm::vec3(0)) {
-            Ray reflection = computeReflectionRay(ray, hitInfo);
-            // TODO: put your own implementation of recursive ray tracing here.
-            glm::vec3 reflectedColor = computeLightContribution(scene, bvh, features, reflection, hitInfo);
-            reflectedColor += getFinalColor(scene, bvh, reflection, features, rayDepth + 1);
-            Lo += hitInfo.material.ks * reflectedColor;
+        if (features.enableRecursive && rayDepth < features.maxRayDepth) {
+            if (hitInfo.material.transparency < 1 && features.extra.enableTransparency) {
+                Ray trans {
+                    ray.origin + ray.direction * ray.t * 1.000001f,
+                    ray.direction,
+                    std::numeric_limits<float>::max(),
+                };
+                glm::vec3 transColor(0);
+
+                if (features.extra.enableTranslucency) {
+                    glm::vec3 transX = (trans.direction == glm::vec3(1, 0, 0))
+                        ? glm::normalize(glm::cross(trans.direction, glm::vec3(0, 0, 1)))
+                        : glm::normalize(glm::cross(trans.direction, glm::vec3(1, 0, 0)));
+
+                    glm::vec3 transY = glm::cross(trans.direction, transX);
+
+                    int goodSamples = 0;
+                    for (int i = 0; i < features.extra.translucentSamples; i++) {
+                        float theta = to_double(next_rand()) * 2 * std::numbers::pi;
+                        float r = std::sqrt(to_double(next_rand()));
+
+                        if (enableDebugDraw) {
+                            theta = to_double(next_rand(rand_state)) * 2 * std::numbers::pi;
+                            r = std::sqrt(to_double(next_rand(rand_state)));
+                        }
+
+                        Ray translucent {
+                            trans.origin,
+                            trans.direction
+                                + (transX * cos(theta) + transY * sin(theta)) * r / hitInfo.material.shininess,
+                            std::numeric_limits<float>::max(),
+                        };
+
+                        translucent.origin += 0.000001f * translucent.direction;
+
+                        if (std::signbit(dot(translucent.direction, hitInfo.normal))
+                            == std::signbit(dot(trans.direction, hitInfo.normal))) {
+                            transColor += getFinalColor(scene, bvh, translucent, features, rayDepth + 1);
+                            goodSamples++;
+                        }
+                    }
+                    transColor /= goodSamples;
+                    Lo = Lo * hitInfo.material.transparency + transColor * (1 - hitInfo.material.transparency);
+                } else
+                    Lo = Lo * hitInfo.material.transparency
+                        + getFinalColor(scene, bvh, trans, features, rayDepth + 1)
+                            * (1 - hitInfo.material.transparency);
+            }
+
+            if (hitInfo.material.ks != glm::vec3(0)) {
+                Ray reflection = computeReflectionRay(ray, hitInfo);
+                glm::vec3 reflectedColor(0);
+
+                if (features.extra.enableGlossyReflection) {
+                    glm::vec3 reflectionX = (reflection.direction == glm::vec3(1, 0, 0))
+                        ? glm::normalize(glm::cross(reflection.direction, glm::vec3(0, 0, 1)))
+                        : glm::normalize(glm::cross(reflection.direction, glm::vec3(1, 0, 0)));
+
+                    glm::vec3 reflectionY = glm::cross(reflection.direction, reflectionX);
+
+                    int goodSamples = 0;
+                    for (int i = 0; i < features.extra.glossySamples; i++) {
+                        float theta = to_double(next_rand()) * 2 * std::numbers::pi;
+                        float r = std::sqrt(to_double(next_rand()));
+
+                        if (enableDebugDraw) {
+                            theta = to_double(next_rand(rand_state)) * 2 * std::numbers::pi;
+                            r = std::sqrt(to_double(next_rand(rand_state)));
+                        }
+
+                        Ray gloss {
+                            reflection.origin,
+                            reflection.direction
+                                + (reflectionX * cos(theta) + reflectionY * sin(theta)) * r
+                                    / hitInfo.material.shininess,
+                            std::numeric_limits<float>::max(),
+                        };
+
+                        gloss.origin += 0.000001f * gloss.direction;
+
+                        if (dot(gloss.direction, hitInfo.normal) > 0) {
+                            reflectedColor += getFinalColor(scene, bvh, gloss, features, rayDepth + 1);
+                            goodSamples++;
+                        }
+                    }
+                    reflectedColor /= goodSamples;
+
+                } else {
+                    // reflectedColor = computeLightContribution(scene, bvh, features, reflection, hitInfo);
+                    reflectedColor += getFinalColor(scene, bvh, reflection, features, rayDepth + 1);
+                }
+
+                Lo += hitInfo.material.ks * reflectedColor;
+            }
         }
 
         // Visual debug for shading + recursive ray tracing
         drawRay(ray, Lo);
 
-        drawNormal(ray, hitInfo);
+        if (features.debug.drawHitNormal)
+            drawNormal(ray, hitInfo);
 
         // Draw shadow rays
-        if (features.enableHardShadow)
-            drawShadowRays(ray, scene, bvh, features);
+        // if (features.enableHardShadow)
+        //    drawShadowRays(ray, scene, bvh, features);
 
         // Set the color of the pixel if the ray hits.
         // return glm::abs(hitInfo.normal);
         // return glm::abs(hitInfo.barycentricCoords);
         return Lo;
     } else {
-        // Draw a red debug ray if the ray missed.
-
-        
-        // Set the color of the pixel to black if the ray misses.
+        // Set the color of the pixel if the ray misses.
         glm::vec3 defaultcolor = acquireTexelEnvironment(img, ray.direction, features);
         if (features.extra.enableEnvironmentMapping)
             drawRay(ray, defaultcolor);
@@ -63,7 +156,7 @@ void renderRayTracing(
     glm::ivec2 windowResolution = screen.resolution();
 
     Plane focalPlane {
-        glm::dot(camera.position() + camera.forward() * glm::vec3(features.extra.focalLength), camera.forward()),
+        glm::dot(camera.position() + camera.forward() * features.extra.focalLength, camera.forward()),
         camera.forward(),
     };
 
@@ -85,7 +178,7 @@ void renderRayTracing(
                 float(y) / float(windowResolution.y) * 2.0f - 1.0f,
             };
             Ray cameraRay = camera.generateRay(normalizedPixelPos);
-            glm::vec3 pixelColor {0.0f};
+            glm::vec3 pixelColor { 0.0f };
             if (features.extra.enableDepthOfField)
                 pixelColor = DOFColor(scene, bvh, focalPlane, cameraRay, features, glm::mat2x3(apertureX, apertureY));
             else if (features.extra.enableMotionBlur) {
@@ -100,7 +193,7 @@ void renderRayTracing(
                 }
             } else
                 pixelColor = getFinalColor(scene, bvh, cameraRay, features);
-            screen.setPixel(x, y, pixelColor);  
+            screen.setPixel(x, y, pixelColor);
         }
     }
 }
@@ -130,3 +223,19 @@ glm::vec3 DOFColor(
 
     return pixelColor / glm::vec3(features.extra.DOFSamples);
 }
+
+// For later use, dw abt this
+// Calculates the ratio between reflection and refraction
+// float fresnel(const Ray& ray, const HitInfo& hitInfo, float IORfrom, float IORto)
+//{
+//    // Shlick's approximation for Fresnel
+//    float r0 = ((IORfrom - IORto) * (IORfrom - IORto)) / ((IORfrom + IORto) * (IORfrom + IORto));
+//    float cosTheta = -glm::dot(glm::normalize(ray.direction), hitInfo.normal);
+//    if (IORfrom > IORto) {
+//        float sinTheta2 = (1.0 - cosTheta * cosTheta) * IORfrom * IORfrom / (IORto * IORto);
+//        if (sinTheta2 > 1.0)
+//            // Total internal
+//            return 1.0;
+//        cosTheta = std::sqrt(1.0 - sinTheta2);
+//    }
+//}

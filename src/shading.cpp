@@ -22,7 +22,6 @@ const glm::vec3 computeShading(const glm::vec3& lightPosition, const glm::vec3& 
     return diffuseLight + specularLight;
 }
 
-
 const Ray computeReflectionRay (Ray ray, HitInfo hitInfo)
 {
     // Do NOT use glm::reflect!! write your own code.
@@ -34,7 +33,7 @@ const Ray computeReflectionRay (Ray ray, HitInfo hitInfo)
         reflectionRay.origin = ray.origin + ray.t * ray.direction + glm::vec3(0.000001) * hitInfo.normal;
         reflectionRay.t = std::numeric_limits<float>::max();
         // to get vector from origin to point on the surface we do: ray.origin - pointOnSurface, where the point is ray.origin + ray.t * ray.direction
-        glm::vec3 fromPointToOrigin = glm::normalize(-ray.t * ray.direction); // we can normalize since we only need the direction of the reflected vector
+        glm::vec3 fromPointToOrigin = glm::normalize(-ray.direction); // we can normalize since we only need the direction of the reflected vector
         reflectionRay.direction = glm::normalize(2 * glm::dot(hitInfo.normal, fromPointToOrigin) * hitInfo.normal - fromPointToOrigin);
     }
 

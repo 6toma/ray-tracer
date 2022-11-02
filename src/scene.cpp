@@ -77,14 +77,29 @@ Scene loadScenePrebuilt(SceneType type, const std::filesystem::path& dataDir)
         scene.spheres.push_back(Sphere { glm::vec3(0.0f, 0.0f, 6.0f), 0.75f, Material { glm::vec3(0.2f, 0.2f, 0.8f) } });
         scene.lights.emplace_back(PointLight { glm::vec3(3, 0, 3), glm::vec3(15) });
     } break;
-    case Custom: {
+    case Theatre: {
         // === Replace custom.obj by your own 3D model (or call your 3D model custom.obj) ===
-        auto subMeshes = loadMesh(dataDir / "custom.obj");
+        auto subMeshes = loadMesh(dataDir / "theatre.obj");
         std::move(std::begin(subMeshes), std::end(subMeshes), std::back_inserter(scene.meshes));
         // === CHANGE THE LIGHTING IF DESIRED ===
-        scene.lights.emplace_back(PointLight { glm::vec3(-1, 1, -1), glm::vec3(1) });
-        // Spherical light: position, radius, color
-        // scene.lights.push_back(SphericalLight{ glm::vec3(0, 1.5f, 0), 0.2f, glm::vec3(1) });
+        scene.lights.emplace_back(ParallelogramLight {
+            .v0 = glm::vec3(-5.33124, 13.2906, -5.19249),
+            .edge01 = glm::vec3(-0.6445, -0.3357, -0.11818),
+            .edge02 = glm::vec3(0.23046, -0.2075, -0.66772),
+            .color0 = glm::vec3(1, 1, 1),
+            .color1 = glm::vec3(1, 1, 1),
+            .color2 = glm::vec3(1, 1, 1),
+            .color3 = glm::vec3(1, 1, 1),
+        });
+        scene.lights.emplace_back(ParallelogramLight {
+            .v0 = glm::vec3(5.33124, 13.2906, -5.19249),
+            .edge01 = glm::vec3(0.6445, -0.3357, -0.11818),
+            .edge02 = glm::vec3(-0.23046, -0.2075, -0.66772),
+            .color0 = glm::vec3(1, 1, 1),
+            .color1 = glm::vec3(1, 1, 1),
+            .color2 = glm::vec3(1, 1, 1),
+            .color3 = glm::vec3(1, 1, 1),
+        });
     } break;
     };
 

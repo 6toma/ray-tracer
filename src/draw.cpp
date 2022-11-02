@@ -24,8 +24,8 @@ DISABLE_WARNINGS_POP()
 #include <algorithm>
 #include <bvh_interface.h>
 #include <light.h>
-#include <rand_utils.h>
 #include <numbers>
+#include <rand_utils.h>
 #include <render.h>
 
 bool enableDebugDraw = false;
@@ -255,7 +255,7 @@ void drawShadowRays(const Ray& ray, const Scene& scene, const BvhInterface& bvh,
         if (std::holds_alternative<PointLight>(light)) {
             const PointLight pointLight = std::get<PointLight>(light);
             glm::vec3 pos = ray.origin + ray.direction * ray.t;
-            glm::vec3 offset = glm::normalize(pointLight.position - pos) * glm::vec3(0.000001);
+            glm::vec3 offset = glm::normalize(pointLight.position - pos) * 0.000001f;
             Ray lightRay { pos + offset, pointLight.position - pos - offset, 1 };
             if (bvh.intersect(lightRay, hitInfo, features) && lightRay.t < 1) {
                 drawRay(lightRay, glm::vec3(1, 0, 0));
@@ -275,7 +275,7 @@ void drawShadowRays(const Ray& ray, const Scene& scene, const BvhInterface& bvh,
                 lightPosition = segmentLight.endpoint0 * t + segmentLight.endpoint1 * (1 - t);
                 lightColor = segmentLight.color0 * t + segmentLight.color1 * (1 - t);
 
-                glm::vec3 offset = glm::normalize(lightPosition - pos) * glm::vec3(0.000001);
+                glm::vec3 offset = glm::normalize(lightPosition - pos) * 0.000001f;
                 Ray lightRay { pos + offset, lightPosition - pos - offset, 1 };
                 if (bvh.intersect(lightRay, hitInfo, features) && lightRay.t < 1) {
                     drawRay(lightRay, glm::vec3(1, 0, 0));
@@ -299,7 +299,7 @@ void drawShadowRays(const Ray& ray, const Scene& scene, const BvhInterface& bvh,
                 lightColor = parallelogramLight.color0 * x * y + parallelogramLight.color1 * (1 - x) * y
                     + parallelogramLight.color2 * x * (1 - y) + parallelogramLight.color3 * (1 - x) * (1 - y);
 
-                glm::vec3 offset = glm::normalize(lightPosition - pos) * glm::vec3(0.000001);
+                glm::vec3 offset = glm::normalize(lightPosition - pos) * 0.000001f;
                 Ray lightRay { pos + offset, lightPosition - pos - offset, 1 };
                 if (bvh.intersect(lightRay, hitInfo, features) && lightRay.t < 1) {
                     drawRay(lightRay, glm::vec3(1, 0, 0));
@@ -342,50 +342,38 @@ void drawNormals(const Scene& scene, int interpolationLevel)
                 glm::vec3 interPos
                     = (mesh.vertices[triangleIndex[0]].position + mesh.vertices[triangleIndex[1]].position
                        + mesh.vertices[triangleIndex[2]].position)
-                    / glm::vec3(3);
+                    / 3.0f;
 
                 drawLine(Ray { interPos, interNormal, 0.1 }, glm::abs(interNormal));
             } else if (interpolationLevel == 2) {
-                glm::vec3 interNormal
-                    = interpolateNormal(normals[0], normals[1], normals[2], glm::vec3(3.0 / 5.0, 1.0 / 5.0, 1.0 / 5.0));
-                glm::vec3 interPos = (mesh.vertices[triangleIndex[0]].position * glm::vec3(3.0 / 5.0))
-                    + (mesh.vertices[triangleIndex[1]].position + mesh.vertices[triangleIndex[2]].position)
-                        * glm::vec3(1.0 / 5.0);
+                glm::vec3 interNormal = interpolateNormal(normals[0], normals[1], normals[2], glm::vec3(0.6, 0.2, 0.2));
+                glm::vec3 interPos = (mesh.vertices[triangleIndex[0]].position * 0.6f)
+                    + (mesh.vertices[triangleIndex[1]].position + mesh.vertices[triangleIndex[2]].position) * 0.2f;
                 drawLine(Ray { interPos, interNormal, 0.1 }, glm::abs(interNormal));
 
-                interNormal
-                    = interpolateNormal(normals[0], normals[1], normals[2], glm::vec3(1.0 / 5.0, 3.0 / 5.0, 1.0 / 5.0));
-                interPos = (mesh.vertices[triangleIndex[1]].position * glm::vec3(3.0 / 5.0))
-                    + (mesh.vertices[triangleIndex[0]].position + mesh.vertices[triangleIndex[2]].position)
-                        * glm::vec3(1.0 / 5.0);
+                interNormal = interpolateNormal(normals[0], normals[1], normals[2], glm::vec3(0.2, 0.6, 0.2));
+                interPos = (mesh.vertices[triangleIndex[1]].position * 0.6f)
+                    + (mesh.vertices[triangleIndex[0]].position + mesh.vertices[triangleIndex[2]].position) * 0.2f;
                 drawLine(Ray { interPos, interNormal, 0.1 }, glm::abs(interNormal));
 
-                interNormal
-                    = interpolateNormal(normals[0], normals[1], normals[2], glm::vec3(1.0 / 5.0, 1.0 / 5.0, 3.0 / 5.0));
-                interPos = (mesh.vertices[triangleIndex[2]].position * glm::vec3(3.0 / 5.0))
-                    + (mesh.vertices[triangleIndex[1]].position + mesh.vertices[triangleIndex[0]].position)
-                        * glm::vec3(1.0 / 5.0);
+                interNormal = interpolateNormal(normals[0], normals[1], normals[2], glm::vec3(0.2, 0.2, 0.6));
+                interPos = (mesh.vertices[triangleIndex[2]].position * 0.6f)
+                    + (mesh.vertices[triangleIndex[1]].position + mesh.vertices[triangleIndex[0]].position) * 0.2f;
                 drawLine(Ray { interPos, interNormal, 0.1 }, glm::abs(interNormal));
 
-                interNormal
-                    = interpolateNormal(normals[0], normals[1], normals[2], glm::vec3(2.0 / 5.0, 2.0 / 5.0, 1.0 / 5.0));
-                interPos = (mesh.vertices[triangleIndex[2]].position * glm::vec3(1.0 / 5.0))
-                    + (mesh.vertices[triangleIndex[1]].position + mesh.vertices[triangleIndex[0]].position)
-                        * glm::vec3(2.0 / 5.0);
+                interNormal = interpolateNormal(normals[0], normals[1], normals[2], glm::vec3(0.4, 0.4, 0.2));
+                interPos = (mesh.vertices[triangleIndex[2]].position * 0.2f)
+                    + (mesh.vertices[triangleIndex[1]].position + mesh.vertices[triangleIndex[0]].position) * 0.4f;
                 drawLine(Ray { interPos, interNormal, 0.1 }, glm::abs(interNormal));
 
-                interNormal
-                    = interpolateNormal(normals[0], normals[1], normals[2], glm::vec3(2.0 / 5.0, 1.0 / 5.0, 2.0 / 5.0));
-                interPos = (mesh.vertices[triangleIndex[1]].position * glm::vec3(1.0 / 5.0))
-                    + (mesh.vertices[triangleIndex[0]].position + mesh.vertices[triangleIndex[2]].position)
-                        * glm::vec3(2.0 / 5.0);
+                interNormal = interpolateNormal(normals[0], normals[1], normals[2], glm::vec3(0.4, 0.2, 0.4));
+                interPos = (mesh.vertices[triangleIndex[1]].position * 0.2f)
+                    + (mesh.vertices[triangleIndex[0]].position + mesh.vertices[triangleIndex[2]].position) * 0.4f;
                 drawLine(Ray { interPos, interNormal, 0.1 }, glm::abs(interNormal));
 
-                interNormal
-                    = interpolateNormal(normals[0], normals[1], normals[2], glm::vec3(1.0 / 5.0, 2.0 / 5.0, 2.0 / 5.0));
-                interPos = (mesh.vertices[triangleIndex[0]].position * glm::vec3(1.0 / 5.0))
-                    + (mesh.vertices[triangleIndex[1]].position + mesh.vertices[triangleIndex[2]].position)
-                        * glm::vec3(2.0 / 5.0);
+                interNormal = interpolateNormal(normals[0], normals[1], normals[2], glm::vec3(0.2, 0.4, 0.4));
+                interPos = (mesh.vertices[triangleIndex[0]].position * 0.2f)
+                    + (mesh.vertices[triangleIndex[1]].position + mesh.vertices[triangleIndex[2]].position) * 0.4f;
                 drawLine(Ray { interPos, interNormal, 0.1 }, glm::abs(interNormal));
             }
         }
@@ -393,8 +381,8 @@ void drawNormals(const Scene& scene, int interpolationLevel)
 }
 
 void drawDOF(
-    const Scene& scene, const BvhInterface& bvh, const Plane& focalPlane,
-    const Ray& cameraRay, const Features& features, const glm::mat2x3& apertureBasis
+    const Scene& scene, const BvhInterface& bvh, const Plane& focalPlane, const Ray& cameraRay,
+    const Features& features, const glm::mat2x3& apertureBasis
 )
 {
     if (!enableDebugDraw)
@@ -412,7 +400,7 @@ void drawDOF(
             = cameraRay.origin + features.extra.apertureRadius * apertureBasis * glm::vec2(cos(theta2), sin(theta2));
         drawLine(p1, p2, glm::abs(glm::normalize(p2 - p1)));
     }
-    
+
     float t = (focalPlane.D - glm::dot(focalPlane.normal, cameraRay.origin))
         / glm::dot(focalPlane.normal, cameraRay.direction);
 
