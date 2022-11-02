@@ -179,20 +179,19 @@ void renderRayTracing(
             };
             Ray cameraRay = camera.generateRay(normalizedPixelPos);
             glm::vec3 pixelColor { 0.0f };
-            if (features.extra.enableDepthOfField)
-                pixelColor = DOFColor(scene, bvh, focalPlane, cameraRay, features, glm::mat2x3(apertureX, apertureY));
-            else if (features.extra.enableMotionBlur) {
+            if (features.extra.enableMotionBlur) {
                 int sampleAmount = 200;
                 float cof = 1.0 / (float)(sampleAmount);
                 for (int i = 0; i < sampleAmount; i++) {
                     float r = -static_cast<float>(rand()) / static_cast<float>(RAND_MAX) * motionBlurSetting.speed;
                     glm::vec3 offset = motionBlurSetting.movingDirection * r;
                     cameraRay.origin += offset;
-                    pixelColor += getFinalColor(scene, bvh, cameraRay, features) * cof;
+                    pixelColor
+                        += DOFColor(scene, bvh, focalPlane, cameraRay, features, glm::mat2x3(apertureX, apertureY)) * cof;
                     cameraRay.origin -= offset;
                 }
             } else
-                pixelColor = getFinalColor(scene, bvh, cameraRay, features);
+                pixelColor = DOFColor(scene, bvh, focalPlane, cameraRay, features, glm::mat2x3(apertureX, apertureY));
             screen.setPixel(x, y, pixelColor);
         }
     }
@@ -203,6 +202,9 @@ glm::vec3 DOFColor(
     const Features& features, const glm::mat2x3& apertureBasis
 )
 {
+    if (!features.extra.enableDepthOfField)
+        return getFinalColor(scene, bvh, cameraRay, features);
+
     float t = (focalPlane.D - glm::dot(focalPlane.normal, cameraRay.origin))
         / glm::dot(focalPlane.normal, cameraRay.direction);
 
