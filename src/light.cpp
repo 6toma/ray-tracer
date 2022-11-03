@@ -14,7 +14,7 @@ DISABLE_WARNINGS_POP()
 // you should fill in the vectors position and color with the sampled position and color
 void sampleSegmentLight(const SegmentLight& segmentLight, glm::vec3& position, glm::vec3& color)
 {
-    float t = to_double(next_rand());
+    float t = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
     // float t = dis(gen);
     position = segmentLight.endpoint0 * t + segmentLight.endpoint1 * (1 - t);
     color = segmentLight.color0 * t + segmentLight.color1 * (1 - t);
@@ -24,8 +24,8 @@ void sampleSegmentLight(const SegmentLight& segmentLight, glm::vec3& position, g
 // you should fill in the vectors position and color with the sampled position and color
 void sampleParallelogramLight(const ParallelogramLight& parallelogramLight, glm::vec3& position, glm::vec3& color)
 {
-    float x = to_double(next_rand());
-    float y = to_double(next_rand());
+    float x = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
+    float y = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
     // float x = dis(gen);
     // float y = dis(gen);
     position = parallelogramLight.v0 + parallelogramLight.edge01 * x + parallelogramLight.edge02 * y;

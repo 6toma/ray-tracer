@@ -45,8 +45,8 @@ glm::vec3 getFinalColor(const Scene& scene, const BvhInterface& bvh, Ray ray, co
 
                     int goodSamples = 0;
                     for (int i = 0; i < features.extra.translucentSamples; i++) {
-                        float theta = to_double(next_rand()) * 2 * std::numbers::pi;
-                        float r = std::sqrt(to_double(next_rand()));
+                        float theta = static_cast<float>(rand()) / static_cast<float>(RAND_MAX) * 2 * std::numbers::pi;
+                        float r = std::sqrt(static_cast<float>(rand()) / static_cast<float>(RAND_MAX));
 
                         if (enableDebugDraw) {
                             theta = to_double(next_rand(rand_state)) * 2 * std::numbers::pi;
@@ -89,8 +89,8 @@ glm::vec3 getFinalColor(const Scene& scene, const BvhInterface& bvh, Ray ray, co
 
                     int goodSamples = 0;
                     for (int i = 0; i < features.extra.glossySamples; i++) {
-                        float theta = to_double(next_rand()) * 2 * std::numbers::pi;
-                        float r = std::sqrt(to_double(next_rand()));
+                        float theta = static_cast<float>(rand()) / static_cast<float>(RAND_MAX) * 2 * std::numbers::pi;
+                        float r = std::sqrt(static_cast<float>(rand()) / static_cast<float>(RAND_MAX));
 
                         if (enableDebugDraw) {
                             theta = to_double(next_rand(rand_state)) * 2 * std::numbers::pi;
@@ -209,8 +209,8 @@ glm::vec3 DOFColor(
 
     glm::vec3 pixelColor(0);
     for (int i = 0; i < features.extra.DOFSamples; i++) {
-        float theta = to_double(next_rand()) * 2 * std::numbers::pi;
-        float r = std::sqrt(to_double(next_rand()));
+        float theta = static_cast<float>(rand()) / static_cast<float>(RAND_MAX) * 2 * std::numbers::pi;
+        float r = std::sqrt(static_cast<float>(rand()) / static_cast<float>(RAND_MAX));
         glm::vec2 offset = glm::vec2(cos(theta), sin(theta)) * r * features.extra.apertureRadius;
 
         const Ray DOFRay {

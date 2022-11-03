@@ -262,28 +262,32 @@ int main(int argc, char** argv)
                 }
             }
             if (ImGui::Button("Benchmark")) {
-                float t = 0;
+                float mean = 0;
+                float s2 = 0;
                 for (int i = 0; i < benchmarkRenders; i++) {
                     // Perform a new render and measure the time it took to generate the image.
                     using clock = std::chrono::high_resolution_clock;
                     const auto start = clock::now();
                     renderRayTracing(scene, camera, bvh, screen, config.features);
                     const auto end = clock::now();
-                    t += std::chrono::duration<float, std::milli>(end - start).count();
+                    float t = std::chrono::duration<float, std::milli>(end - start).count();
+                    mean += t;
+                    s2 += t * t;
                 }
-                t /= benchmarkRenders;
-                std::cout << "Avg. time to render image over " << benchmarkRenders << " iterations: " << t
+                mean /= benchmarkRenders;
+                std::cout << "Avg. time to render image over " << benchmarkRenders << " iterations: " << mean
                           << " milliseconds";
-                if (t >= 3600000) {
-                    std::cout << " or " << t / 3600000 << " hours";
-                } else if (t >= 60000) {
-                    std::cout << " or " << t / 60000 << " minutes";
-                } else if (t >= 1000) {
-                    std::cout << " or " << t / 1000 << " seconds";
+                if (mean >= 3600000) {
+                    std::cout << " or " << mean / 3600000 << " hours";
+                } else if (mean >= 60000) {
+                    std::cout << " or " << mean / 60000 << " minutes";
+                } else if (mean >= 1000) {
+                    std::cout << " or " << mean / 1000 << " seconds";
                 }
-                std::cout << std::endl;
+                std::cout << std::endl
+                          << "Std. dev.: " << sqrt((s2 / benchmarkRenders) - (mean * mean)) << " ms" << std::endl;
             }
-            ImGui::SliderInt("# of benchmark renders", &benchmarkRenders, 1, 50);
+            ImGui::SliderInt("# of benchmark renders", &benchmarkRenders, 1, 1000, "%d", ImGuiSliderFlags_Logarithmic);
 
             ImGui::Spacing();
             ImGui::Separator();
