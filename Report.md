@@ -5,13 +5,10 @@ Renyi Yang 5470668
 Toma Volentir 5454123
 Group number: 62
 
----
-
 ## Work Distribution
 
 Reflected in "final-project-workload-final.xlsx"
 
----
 
 ## Basic Features
 
@@ -49,6 +46,19 @@ and averaged together.
 
 ### BVH generation
 
+The `Node` structure is designed according to the assignment requirement, I use 4 indexes to locate a triangle, `TriangleCoordinate = (meshIndex, vertexIndex1,vertexIndex2,vertexIndex3)`.when a bvh tree is created,  it goes through all the triangles and store the triangle coordinates in a vector, then it will be used in method `treeConstruction` which means to fill the global variable `tree`.
+
+`treeConstruction` is a recursive function, at each layer the current node is generated according to the triangles it contains, then spilt the triangles in the middle and has the recursive calls for the next layer(if needed).
+
+parameter `maxdepth` can be adjusted to control for the final shape of the `tree`, for default it's set to 10.
+
+The effect of the BVH cannot be shown in the rendered image because it doesn't influence the appearance of the scene, but the improvement of the render speed is present in the "performance test" block.
+| ![debug level](report\bvh_debug_level.png) | ![debug leaf](report\bvh_debug_leaf.png) |
+| :----------------------------------------: | :--------------------------------------: |
+|     AABBs for BVH nodes with level = 5     |       4th leaf of the cornell box        |
+
+
+
 ### BVH traversal
 
 ### Normal interpolation
@@ -70,6 +80,12 @@ Normal is calculated using barycentric coordinates obtained in intersection and 
 ## Extra Features
 
 ### Environment maps
+
+Method `glm::vec3 acquireTexelEnvironment(const Image& image, const glm::vec3& direction, const Features& features)` is made to retrieve the corresponding pixel of the environmental texture given the direction of the camera.  A vector function is created to mapping normalized 3d vectors to a 2d vector (u,v) while u,v are values between 0 and 1. Then the uv coordinate is scaled according to the size of the texture and it's converted to the pixel index.
+
+This method is called when the ray has no hit so it can create a background looking.
+
+
 
 ### SAH+binning
 

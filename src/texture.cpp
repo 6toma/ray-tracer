@@ -33,8 +33,8 @@ glm::vec3 acquireTexelEnvironment(const Image& image, const glm::vec3& direction
         u = 1;
     else
         u = std::asin(direction.z) / std::numbers::pi + 0.5;
-    int j = floor(u * (image.width - 1) + 0.5);
-    int i = image.height - floor(v * (image.height - 1) + 0.5) - 1;
+    int j = round(u * image.width - 0.5);
+    int i = image.height - round(v * image.height - 0.5) - 1;
     /*
     if (i < 0 || i >= image.height || j < 0 || j >= image.width)
         std::cout << u << " " << v << " " << i << " " << j << " " << image.width << " " << image.height
