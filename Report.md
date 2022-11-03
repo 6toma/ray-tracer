@@ -138,7 +138,7 @@ the menu in OpenGL. This feature is best seen in examples 2 and 4.
 |----------------------------------------------------|----------------------------------------------------|
 | _Example 1 - left ear hit_                         | _Example 2 - right side of head hit_               |
 | ![ex 3](./report/bvh_traversal_visual_debug_3.png) | ![ex 4](./report/bvh_traversal_visual_debug_4.png) |
-| _Example 3- no primitive hit_                      | _Example 4 - drawn primitive_                      |
+| _Example 3 - no primitive hit_                      | _Example 4 - drawn primitive_                      |
 
 
 ### Normal interpolation
