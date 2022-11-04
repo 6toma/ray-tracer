@@ -63,6 +63,7 @@ int main(int argc, char** argv)
 
         SceneType sceneType { SceneType::SingleTriangle };
         std::optional<Ray> optDebugRay;
+        glm::vec2 pixel;
         Plane focalPlane;
         glm::mat2x3 apertureBasis;
         Scene scene = loadScenePrebuilt(sceneType, config.dataPath);
@@ -84,8 +85,8 @@ int main(int argc, char** argv)
                 switch (key) {
                 case GLFW_KEY_R: {
                     // Shoot a ray. Produce a ray from camera to the far plane.
-                    const auto tmp = window.getNormalizedCursorPos();
-                    optDebugRay = camera.generateRay(tmp * 2.0f - 1.0f);
+                    pixel = window.getNormalizedCursorPos();
+                    optDebugRay = camera.generateRay(pixel * 2.0f - 1.0f);
 
                     focalPlane = {
                         glm::dot(
@@ -474,10 +475,7 @@ int main(int argc, char** argv)
                     glDisable(GL_LIGHTING);
                     glDepthFunc(GL_LEQUAL);
 
-                    if (config.features.extra.enableDepthOfField)
-                        drawDOF(scene, bvh, focalPlane, *optDebugRay, config.features, apertureBasis);
-                    else
-                        getFinalColor(scene, bvh, *optDebugRay, config.features);
+                    drawDOF(scene, bvh, focalPlane, *optDebugRay, config.features, apertureBasis);
                     enableDebugDraw = false;
                 }
                 if (debugNormals) {
