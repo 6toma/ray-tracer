@@ -1,9 +1,11 @@
 # CG Final Project Report
 
-Kazek Ciaś 5467640
-Renyi Yang 5470668
-Toma Volentir 5454123
-Group number: 62
+- Kazek Ciaś 5467640
+- Renyi Yang 5470668
+- Toma Volentir 5454123
+- Group number: 62
+
+We do not use the prebuilt intersection library
 
 ## Work Distribution
 
@@ -237,6 +239,51 @@ For visual debug a line segment can be drawn whose direction represents the moti
 
 
 ### Bloom filter
+
+**Implementation**
+
+Bloom filtering is done on the final rendered image in the ``renderRayTracing`` method in the ``render.cpp`` file.
+Following the model from the lecture, only pixels with color above a certain threshold are taken for filtering 
+(take a grayscale value which is represented by the highest term in RGB form: ``max(red, green, blue)``). Then, a filter 
+is applied over these pixels. Instead of box filter (average of 9 pixels), as in the lecture, 2-pass gaussian filter is 
+used. This method provides a better blur because of usage of weights following a gaussian distribution, as opposed to 
+all pixels having the same weight (1/9) as in the box filter. 2-pass gaussian blur is better than normal gaussian blur 
+in terms of performance. In the end, the original image pixel is added to the filtered pixel to obtain the bloom effect.
+
+When enabling bloom filter in the OpenGL menu, there are 2 extra parameters which can be specified: ``threshold`` and 
+``intensity``. Both have Slider GUIs ranging from 0 to 1. ``Threshold`` controls how bright pixels should be in order to be
+taken into account by the filter: high threshold means less pixels taken into account, lower threshold means more pixels.
+``Intensity`` controls how strong the light emission is on the filter: high intensity, stronger light emission.
+
+Here are the sources which helped in implementing this feature:
+- [Learn OpenGL Bloom](https://learnopengl.com/Advanced-Lighting/Bloom)
+- [Catlike coding - unity - bloom](https://catlikecoding.com/unity/tutorials/advanced-rendering/bloom/)
+- [3D Game Shaders For Beginners](https://lettier.github.io/3d-game-shaders-for-beginners/bloom.html)
+- [Shadertoy](https://www.shadertoy.com/view/lsXGWn)
+- [Wikipedia Box blur](https://en.wikipedia.org/wiki/Box_blur), while gaussian blur was used instead of box blur, this
+source helped in the implementation.
+
+**Examples**
+
+Cornell Box examples
+
+| ![0 intensity](./report/bloom_4_none.bmp) | ![1 intensity](./report/bloom_5_full.bmp) |
+|-------------------------------------------|-------------------------------------------|
+| _Bloom with 0 intensity_                  | _Bloom with 1 intensity_                  |
+
+| ![low intensity](./report/bloom_1_low.bmp) | ![medium intensity](./report/bloom_2_medium.bmp) | ![high intensity](./report/bloom_3_high.bmp) |
+|--------------------------------------------|--------------------------------------------------|----------------------------------------------|
+| _Low intensity_                            | _Medium intensity_                               | _High intensity_                             |
+
+Dragon examples
+
+
+| ![low threshold, low intensity](./report/dragonbloom1.bmp)  | ![low threshold, high intensity](./report/dragonbloom4.bmp)  |
+|-------------------------------------------------------------|--------------------------------------------------------------|
+| _Low threshold, low intensity_                              | _Low threshold, high intensity_                              |
+| ![high threshold, low intensity](./report/dragonbloom2.bmp) | ![high threshold, high intensity](./report/dragonbloom3.bmp) |
+| _High threshold, low intensity_                             | _High threshold, high intensity_                             |
+
 
 ### Bilinear interpolation
 
