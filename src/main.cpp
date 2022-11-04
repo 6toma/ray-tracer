@@ -194,6 +194,14 @@ int main(int argc, char** argv)
                     "Texture filtering(bilinear interpolation)", &config.features.extra.enableBilinearTextureFiltering
                 );
                 ImGui::Checkbox("Texture filtering(mipmapping)", &config.features.extra.enableMipmapTextureFiltering);
+
+                ImGui::Checkbox("Antialiasing", &config.features.extra.enableMultipleRaysPerPixel);
+                if (config.features.extra.enableMultipleRaysPerPixel)
+                    ImGui::SliderInt(
+                        "Antialiasing samples", &config.features.extra.AASamples, 3, 50, "%d",
+                        ImGuiSliderFlags_Logarithmic
+                    );
+
                 ImGui::Checkbox("Glossy reflections", &config.features.extra.enableGlossyReflection);
                 if (config.features.extra.enableGlossyReflection)
                     ImGui::SliderInt(
@@ -222,6 +230,10 @@ int main(int argc, char** argv)
                 }
                 ImGui::Checkbox("Motion Blur", &config.features.extra.enableMotionBlur);
                 if (config.features.extra.enableMotionBlur) {
+                    ImGui::SliderInt(
+                        "Motion blur samples", &config.features.extra.motionSamples, 10, 1000, "%d",
+                        ImGuiSliderFlags_Logarithmic
+                    );
                     ImGui::DragFloat3(
                         "Moving Direction", glm::value_ptr(config.features.extra.motionDirection), 0.05f, -1.0f, 1.0f
                     );

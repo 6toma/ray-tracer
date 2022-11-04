@@ -60,6 +60,7 @@ struct ExtraFeatures {
     bool enableBvhSahBinning = false;
 
     bool enableMotionBlur = false;
+    int motionSamples = 100;
     glm::vec3 motionDirection { 0.0f };
     float motionSpeed = 0;
 
@@ -68,7 +69,9 @@ struct ExtraFeatures {
     float bloomIntensity = 0.1f;
     bool enableBilinearTextureFiltering = false;
     bool enableMipmapTextureFiltering = false;
+
     bool enableMultipleRaysPerPixel = false;
+    int AASamples = 10;
 
     bool enableGlossyReflection = false;
     int glossySamples = 100;

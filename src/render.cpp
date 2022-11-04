@@ -165,32 +165,40 @@ void renderRayTracing(
 
     glm::vec3 apertureY = glm::cross(camera.forward(), apertureX);
 
+    glm::mat2x3 apertureBasis(apertureX, apertureY);
+
     // Enable multi threading in Release mode
 #ifdef NDEBUG
 #pragma omp parallel for schedule(guided)
 #endif
     for (int y = 0; y < windowResolution.y; y++) {
         for (int x = 0; x != windowResolution.x; x++) {
-            // NOTE: (-1, -1) at the bottom left of the screen, (+1, +1) at the top right of the screen.
-            const glm::vec2 normalizedPixelPos {
-                float(x) / float(windowResolution.x) * 2.0f - 1.0f,
-                float(y) / float(windowResolution.y) * 2.0f - 1.0f,
-            };
-            Ray cameraRay = camera.generateRay(normalizedPixelPos);
-            glm::vec3 pixelColor { 0.0f };
-            if (features.extra.enableMotionBlur) {
-                int sampleAmount = 200;
-                for (int i = 0; i < sampleAmount; i++) {
-                    float r = -static_cast<float>(rand()) / static_cast<float>(RAND_MAX) * features.extra.motionSpeed;
-                    glm::vec3 offset = features.extra.motionDirection * r;
-                    cameraRay.origin += offset;
-                    pixelColor
-                        += DOFColor(scene, bvh, focalPlane, cameraRay, features, glm::mat2x3(apertureX, apertureY));
-                    cameraRay.origin -= offset;
+            glm::vec3 pixelColor(0);
+
+            if (features.extra.enableMultipleRaysPerPixel) {
+                for (int i = 0; i < features.extra.AASamples; i++) {
+                    for (int j = 0; j < features.extra.AASamples; j++) {
+                        float subX = x + ((float)i + (float)rand() / (float)RAND_MAX) / (float)features.extra.AASamples;
+                        float subY = y + ((float)j + (float)rand() / (float)RAND_MAX) / (float)features.extra.AASamples;
+                        const glm::vec2 normalizedPixelPos {
+                            subX / float(windowResolution.x) * 2.0f - 1.0f,
+                            subY / float(windowResolution.y) * 2.0f - 1.0f,
+                        };
+                        Ray cameraRay = camera.generateRay(normalizedPixelPos);
+
+                        pixelColor += DOF(scene, bvh, focalPlane, cameraRay, features, apertureBasis);
+                    }
                 }
-                pixelColor /= sampleAmount;
-            } else
-                pixelColor = DOFColor(scene, bvh, focalPlane, cameraRay, features, glm::mat2x3(apertureX, apertureY));
+
+                pixelColor /= glm::vec3(features.extra.AASamples * features.extra.AASamples);
+            } else {
+                const glm::vec2 normalizedPixelPos {
+                    float(x) / float(windowResolution.x) * 2.0f - 1.0f,
+                    float(y) / float(windowResolution.y) * 2.0f - 1.0f,
+                };
+                Ray cameraRay = camera.generateRay(normalizedPixelPos);
+                pixelColor = DOF(scene, bvh, focalPlane, cameraRay, features, apertureBasis);
+            }
             screen.setPixel(x, y, pixelColor);
         }
     }
@@ -256,13 +264,12 @@ void renderRayTracing(
     }
 }
 
-glm::vec3 DOFColor(
-    const Scene& scene, const BvhInterface& bvh, const Plane& focalPlane, const Ray& cameraRay,
-    const Features& features, const glm::mat2x3& apertureBasis
-)
+glm::vec3
+DOF(const Scene& scene, const BvhInterface& bvh, const Plane& focalPlane, const Ray& cameraRay,
+    const Features& features, const glm::mat2x3& apertureBasis)
 {
     if (!features.extra.enableDepthOfField)
-        return getFinalColor(scene, bvh, cameraRay, features);
+        return motionBlur(scene, bvh, cameraRay, features);
 
     float t = (focalPlane.D - glm::dot(focalPlane.normal, cameraRay.origin))
         / glm::dot(focalPlane.normal, cameraRay.direction);
@@ -279,10 +286,27 @@ glm::vec3 DOFColor(
             std::numeric_limits<float>::max(),
         };
 
-        pixelColor += getFinalColor(scene, bvh, DOFRay, features);
+        pixelColor += motionBlur(scene, bvh, DOFRay, features);
     }
 
     return pixelColor / glm::vec3(features.extra.DOFSamples);
+}
+
+glm::vec3 motionBlur(const Scene& scene, const BvhInterface& bvh, const Ray& cameraRay, const Features& features)
+{
+    if (!features.extra.enableMotionBlur)
+        return getFinalColor(scene, bvh, cameraRay, features);
+
+    glm::vec3 pixelColor(0);
+    Ray motionRay = cameraRay;
+    motionRay.origin -= features.extra.motionDirection * features.extra.motionSpeed / 2.f;
+    for (int i = 0; i < features.extra.motionSamples; i++) {
+        motionRay.origin
+            += features.extra.motionDirection * features.extra.motionSpeed / glm::vec3(features.extra.motionSamples);
+        pixelColor += getFinalColor(scene, bvh, motionRay, features);
+    }
+
+    return pixelColor / glm::vec3(features.extra.motionSamples);
 }
 
 // For later use, dw abt this
