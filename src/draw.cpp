@@ -392,7 +392,7 @@ void drawAA(
         return;
 
     if (!features.extra.enableMultipleRaysPerPixel) {
-        Ray cameraRay = camera.generateRay(pixel);
+        Ray cameraRay = camera.generateRay(pixel / glm::vec2(screen.resolution()) * 2.0f - 1.0f);
         drawDOF(scene, bvh, focalPlane, cameraRay, features, apertureBasis);
         return;
     }

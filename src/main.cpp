@@ -63,7 +63,7 @@ int main(int argc, char** argv)
 
         SceneType sceneType { SceneType::SingleTriangle };
         std::optional<Ray> optDebugRay;
-        glm::vec2 pixel;
+        std::vector<Ray> rays;
         Plane focalPlane;
         glm::mat2x3 apertureBasis;
         Scene scene = loadScenePrebuilt(sceneType, config.dataPath);
@@ -85,8 +85,29 @@ int main(int argc, char** argv)
                 switch (key) {
                 case GLFW_KEY_R: {
                     // Shoot a ray. Produce a ray from camera to the far plane.
-                    pixel = window.getNormalizedCursorPos();
-                    optDebugRay = camera.generateRay(pixel * 2.0f - 1.0f);
+                    glm::vec2 res(screen.resolution());
+                    const auto tmp = window.getCursorPos();
+                    optDebugRay = camera.generateRay(tmp / glm::vec2(res) * 2.0f - 1.0f);
+
+                    rays.clear();
+                    if (config.features.extra.enableMultipleRaysPerPixel) {
+                        for (int i = 0; i < config.features.extra.AASamples; i++) {
+                            for (int j = 0; j < config.features.extra.AASamples; j++) {
+                                float subX = tmp.x
+                                    + ((float)i + (float)rand() / (float)RAND_MAX)
+                                        / (float)config.features.extra.AASamples;
+                                float subY = tmp.y
+                                    + ((float)j + (float)rand() / (float)RAND_MAX)
+                                        / (float)config.features.extra.AASamples;
+                                const glm::vec2 normalizedPixelPos {
+                                    subX / float(res.x) * 2.0f - 1.0f,
+                                    subY / float(res.y) * 2.0f - 1.0f,
+                                };
+
+                                rays.push_back(camera.generateRay(normalizedPixelPos));
+                            }
+                        }
+                    }
 
                     focalPlane = {
                         glm::dot(
@@ -475,7 +496,12 @@ int main(int argc, char** argv)
                     glDisable(GL_LIGHTING);
                     glDepthFunc(GL_LEQUAL);
 
-                    drawDOF(scene, bvh, focalPlane, *optDebugRay, config.features, apertureBasis);
+                    if (config.features.extra.enableMultipleRaysPerPixel) {
+                        for (const Ray& r : rays) {
+                            drawDOF(scene, bvh, focalPlane, r, config.features, apertureBasis);
+                        }
+                    } else
+                        drawDOF(scene, bvh, focalPlane, *optDebugRay, config.features, apertureBasis);
                     enableDebugDraw = false;
                 }
                 if (debugNormals) {

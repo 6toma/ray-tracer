@@ -291,6 +291,22 @@ Dragon examples
 
 ### Irregular sampling
 
+**Implementation**
+
+Instead of taking one sample per pixel, a jittered grid of samples is taken, which eliminates jagged edges.
+
+**Example**
+
+| ![Without AA](./report/noaa.bmp)                   | ![AA example](./report/aa.bmp)                 |
+| -------------------------------------------------- | ---------------------------------------------- |
+| _Notice the jagged edges without irreguar samping_ | _With irreguar sampling, the edges are smooth_ |
+
+**Visual Debug**
+
+| ![AA - visual debug](./report/aadebug.png) |
+| ------------------------------------------ |
+| _All samples are visualised_               |
+
 ### Glossy reflections
 
 **Implementation**
