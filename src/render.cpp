@@ -201,14 +201,10 @@ void renderRayTracing(
             for (int x = 0; x != windowResolution.x; x++) {
                 glm::vec3 pixelColor = pixels[screen.indexAt(x, y)];
                 if (pixelColor != glm::vec3(0)) {
-                    glm::vec3 filteredPixelColor = { pixelColor.x, pixelColor.y, pixelColor.z };
-                    float grayscaledValue
-                        = std::max(filteredPixelColor.x, std::max(filteredPixelColor.y, filteredPixelColor.z));
-                    if (grayscaledValue < features.extra.bloomThreshold)
-                        filteredPixelColor = glm::vec3(0);
-                    else  {
+                    glm::vec3 filteredPixelColor = glm::vec3(0);
+                    float grayscaledValue = std::max(pixelColor.x, std::max(pixelColor.y, pixelColor.z));
+                    if (grayscaledValue >= features.extra.bloomThreshold) {
                         glm::vec3 sum(0);
-                        filteredPixelColor = glm::vec3(0);
                         //2 pass gaussian blur on a 5x5 grid
                         if (!(x < 4 || y < 4 || x + 4 >= windowResolution.x || y + 4 >= windowResolution.y)) {
                             sum += pixels[screen.indexAt(x - 4, y)] * 0.016216f
