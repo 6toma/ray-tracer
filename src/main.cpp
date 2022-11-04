@@ -184,6 +184,12 @@ int main(int argc, char** argv)
                 ImGui::Checkbox("Environment mapping", &config.features.extra.enableEnvironmentMapping);
                 ImGui::Checkbox("BVH SAH binning", &config.features.extra.enableBvhSahBinning);
                 ImGui::Checkbox("Bloom effect", &config.features.extra.enableBloomEffect);
+                if (config.features.extra.enableBloomEffect) {
+                    ImGui::SliderFloat("Threshold", &config.features.extra.bloomThreshold, 0.0f, 1.0f);
+                    ImGui::SliderFloat("Intensity", &config.features.extra.bloomIntensity, 0.0f, 1.0f);
+                }
+                    
+
                 ImGui::Checkbox(
                     "Texture filtering(bilinear interpolation)", &config.features.extra.enableBilinearTextureFiltering
                 );

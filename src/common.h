@@ -64,6 +64,8 @@ struct ExtraFeatures {
     float motionSpeed = 0;
 
     bool enableBloomEffect = false;
+    float bloomThreshold = 0.6f;
+    float bloomIntensity = 0.1f;
     bool enableBilinearTextureFiltering = false;
     bool enableMipmapTextureFiltering = false;
     bool enableMultipleRaysPerPixel = false;

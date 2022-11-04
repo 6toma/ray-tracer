@@ -194,6 +194,67 @@ void renderRayTracing(
             screen.setPixel(x, y, pixelColor);
         }
     }
+
+    if (features.extra.enableBloomEffect) {
+        std::vector<glm::vec3> pixels = screen.pixels();
+        for (int y = 0; y < windowResolution.y; y++) {
+            for (int x = 0; x != windowResolution.x; x++) {
+                glm::vec3 pixelColor = pixels[screen.indexAt(x, y)];
+                if (pixelColor != glm::vec3(0)) {
+                    glm::vec3 filteredPixelColor = { pixelColor.x, pixelColor.y, pixelColor.z };
+                    float grayscaledValue
+                        = std::max(filteredPixelColor.x, std::max(filteredPixelColor.y, filteredPixelColor.z));
+                    if (grayscaledValue < features.extra.bloomThreshold)
+                        filteredPixelColor = glm::vec3(0);
+                    else  {
+                        glm::vec3 sum(0);
+                        filteredPixelColor = glm::vec3(0);
+                        //2 pass gaussian blur on a 5x5 grid
+                        if (!(x < 4 || y < 4 || x + 4 >= windowResolution.x || y + 4 >= windowResolution.y)) {
+                            sum += pixels[screen.indexAt(x - 4, y)] * 0.016216f
+                                + pixels[screen.indexAt(x - 3, y)] * 0.054054f
+                                + pixels[screen.indexAt(x - 2, y)] * 0.1216216f
+                                + pixels[screen.indexAt(x - 1, y)] * 0.1945946f
+                                + pixels[screen.indexAt(x, y)] * 0.227027f
+                                + pixels[screen.indexAt(x + 1, y)] * 0.1945946f
+                                + pixels[screen.indexAt(x + 2, y)] * 0.1216216f
+                                + pixels[screen.indexAt(x + 3, y)] * 0.054054f
+                                + pixels[screen.indexAt(x + 4, y)] * 0.016216f;
+
+                            sum += pixels[screen.indexAt(x, y - 4)] * 0.016216f
+                                + pixels[screen.indexAt(x, y - 3)] * 0.054054f
+                                + pixels[screen.indexAt(x, y - 2)] * 0.1216216f
+                                + pixels[screen.indexAt(x, y - 1)] * 0.1945946f
+                                + pixels[screen.indexAt(x, y)] * 0.227027f
+                                + pixels[screen.indexAt(x, y + 1)] * 0.1945946f
+                                + pixels[screen.indexAt(x, y + 2)] * 0.1216216f
+                                + pixels[screen.indexAt(x, y + 3)] * 0.054054f
+                                + pixels[screen.indexAt(x, y + 4)] * 0.016216f;
+
+                            sum /= 2;
+                            filteredPixelColor += sum * features.extra.bloomIntensity;
+                        }
+                    }
+                    if (filteredPixelColor != glm::vec3(0)) {
+                        pixelColor += filteredPixelColor;
+                        if (!(x < 1 || y < 1 || x + 1 >= windowResolution.x || y + 1 >= windowResolution.y)) {
+                            screen.setPixel(x - 1, y - 1, pixelColor);
+                            screen.setPixel(x - 1, y, pixelColor);
+                            screen.setPixel(x - 1, y + 1, pixelColor);
+                            screen.setPixel(x, y - 1, pixelColor);
+                            screen.setPixel(x, y, pixelColor);
+                            screen.setPixel(x, y + 1, pixelColor);
+                            screen.setPixel(x + 1, y - 1, pixelColor);
+                            screen.setPixel(x + 1, y, pixelColor);
+                            screen.setPixel(x + 1, y + 1, pixelColor);
+                        }
+                    } else
+                        screen.setPixel(x, y, pixelColor);
+                }
+            }
+            
+        }
+    }
 }
 
 glm::vec3 DOFColor(
