@@ -1,6 +1,7 @@
 #include "rand_utils.h"
 
 #include <stdint.h>
+#include <random>
 
 static inline uint64_t rotl(const uint64_t x, int k) { return (x << k) | (x >> (64 - k)); }
 
@@ -14,7 +15,10 @@ double to_double(uint64_t x)
 }
 
 // seed, randomly generated with a d10
-uint64_t shuffle_table[4] { 4550963226, 4884, 2, 724 };
+//uint64_t shuffle_table[4] { 4550963226, 4884, 2, 724 };
+uint64_t shuffle_table[4] { std::rand(), std::rand(), std::rand(), std::rand() };
+//#pragma omp threadprivate(shufle_table)
+
 uint64_t next_rand()
 {
     const uint64_t result = rotl(shuffle_table[1] * 5, 7) * 9;
