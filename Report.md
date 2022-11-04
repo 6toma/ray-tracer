@@ -11,7 +11,6 @@ We do not use the prebuilt intersection library
 
 Reflected in "final-project-workload-final.xlsx"
 
-
 ## Basic Features
 
 ### Shading
@@ -106,7 +105,7 @@ and averaged together.
 
 ### BVH generation
 
-The `Node` structure is designed according to the assignment requirement, I use 4 indexes to locate a triangle, `TriangleCoordinate = (meshIndex, vertexIndex1,vertexIndex2,vertexIndex3)`.when a bvh tree is created,  it goes through all the triangles and store the triangle coordinates in a vector, then it will be used in method `treeConstruction` which means to fill the global variable `tree`.
+The `Node` structure is designed according to the assignment requirement, I use 4 indexes to locate a triangle, `TriangleCoordinate = (meshIndex, vertexIndex1,vertexIndex2,vertexIndex3)`.when a bvh tree is created, it goes through all the triangles and store the triangle coordinates in a vector, then it will be used in method `treeConstruction` which means to fill the global variable `tree`.
 
 `treeConstruction` is a recursive function, at each layer the current node is generated according to the triangles it contains, then spilt the triangles in the middle and has the recursive calls for the next layer(if needed).
 
@@ -115,9 +114,7 @@ parameter `maxdepth` can be adjusted to control for the final shape of the `tree
 The effect of the BVH cannot be shown in the rendered image because it doesn't influence the appearance of the scene, but the improvement of the render speed is present in the "performance test" block.
 | ![debug level](report\bvh_debug_level.png) | ![debug leaf](report\bvh_debug_leaf.png) |
 | :----------------------------------------: | :--------------------------------------: |
-|_AABBs for BVH nodes with level = 5_     |       _4th leaf of the cornell box_        |
-
-
+|_AABBs for BVH nodes with level = 5_ | _4th leaf of the cornell box_ |
 
 ### BVH traversal
 
@@ -191,8 +188,7 @@ After the intersection point is generated, it's texture coordinates is calculate
 the debug ray will get color of the texture if texture mapping is enabled, we can also debug by checking the textured cube in ray-traced mode.
 | ![front 3](./report/texture_front.bmp) | ![back 3](./report/texture_back.bmp) |
 | --------------------------------------- | ---------------------------------- |
-| _front 3 sufaces_                 | _back 3 surface_               |
-
+| _front 3 sufaces_ | _back 3 surface_ |
 
 ---
 
@@ -200,90 +196,87 @@ the debug ray will get color of the texture if texture mapping is enabled, we ca
 
 ### Environment maps
 
-Method `glm::vec3 acquireTexelEnvironment(const Image& image, const glm::vec3& direction, const Features& features)` is made to retrieve the corresponding pixel of the environmental texture given the direction of the camera.  A vector function is created to mapping normalized 3d vectors to a 2d vector (u,v) while u,v are values between 0 and 1. Then the uv coordinate is scaled according to the size of the texture and it's converted to the pixel index.
+Method `glm::vec3 acquireTexelEnvironment(const Image& image, const glm::vec3& direction, const Features& features)` is made to retrieve the corresponding pixel of the environmental texture given the direction of the camera. A vector function is created to mapping normalized 3d vectors to a 2d vector (u,v) while u,v are values between 0 and 1. Then the uv coordinate is scaled according to the size of the texture and it's converted to the pixel index.
 
 This method is called when the ray has no hit so it can create a background looking.
 | ![without reflection](./report/monkey_in_lake.bmp) | ![with reflection](./report/cornell_box_in_lake.bmp) |
 | --------------------------------------- | ---------------------------------- |
-| _Without reflection_                 | _With reflection_               |
+| _Without reflection_ | _With reflection_ |
 
 The debug ray is used for the visual debug, if it has no hit with the environmental mapping open, the ray supposed to have the color of the environmental texture. or it's red as default.
 | ![no mapping](./report/env_debug_without.png) | ![with mapping](./report/env_debug.png) |
 | --------------------------------------------- | --------------------------------------- |
-| _Without environmental mapping_               | _With environmental mapping_            |
-
+| _Without environmental mapping_ | _With environmental mapping_ |
 
 ### SAH+binning
 
-Now the splitting axis and boundary triangle are chosen base on the surface area heuristic. For each splitting the method `std::tuple<int, int> SurfaceAreaHeuristics(Scene* pScene,std::vector<glm::vec4>& traingleIndex)` is called, which will go through all the possible axis and bins, for each split choice, its score is calculated by $SurfaceAreaA*NumberofTrianglesA+SurfaceAreaB*NumberofTrianglesB$ (A and B  are AABBs of the splited node). And the final criteria is determined by the one that has the smallest score. All the rest part is identical to BVH.
+Now the splitting axis and boundary triangle are chosen base on the surface area heuristic. For each splitting the method `std::tuple<int, int> SurfaceAreaHeuristics(Scene* pScene,std::vector<glm::vec4>& traingleIndex)` is called, which will go through all the possible axis and bins, for each split choice, its score is calculated by $SurfaceAreaA*NumberofTrianglesA+SurfaceAreaB*NumberofTrianglesB$ (A and B are AABBs of the splited node). And the final criteria is determined by the one that has the smallest score. All the rest part is identical to BVH.
 
 `float getSurface(const AxisAlignedBox& boundary)`is made auxiliary for the score calculation.
 
 The splitting plane can be drawn with AABBs, indicating where the node gets splited, for BVH all the planes towards the same direction and always near the middle of the AABB, but for SAH splitting planes vary a lot.
 | ![BVH](./report/split_plane_without.png) | ![SAH](./report/split_plane_level5.png) |
 | --------------------------------------------- | --------------------------------------- |
-| _BVH splitting criteria_               | _SAH splitting criteria_            |
+| _BVH splitting criteria_ | _SAH splitting criteria_ |
 
 ### Motion blur
 
-The motion direction and motion speed can be configured via the GUI, the motion direction is considered as the same with its normalized value, and the motion speed is a relative value without physical meaning. During rendering, `glm::vec3 motionBlur(const Scene& scene, const BvhInterface& bvh, const Ray& cameraRay, const Features& features)` is called, in which every ray's origin will have a offset within `(0, motionspeed•motion direction)`. for each ray, we sample the offsets in the range mentioned above, and the number of samples can be configured by GUI. The mean of the color those ray hits donates the final color of the pixel. 
+The motion direction and motion speed can be configured via the GUI, the motion direction is considered as the same with its normalized value, and the motion speed is a relative value without physical meaning. During rendering, `glm::vec3 motionBlur(const Scene& scene, const BvhInterface& bvh, const Ray& cameraRay, const Features& features)` is called, in which every ray's origin will have a offset within `(0, motionspeed•motion direction)`. for each ray, we sample the offsets in the range mentioned above, and the number of samples can be configured by GUI. The mean of the color those ray hits donates the final color of the pixel.
 
 | ![triangle blur](./report/blur0.bmp) | ![monkey blur](./report/motion2render.bmp) |
-| --------------------------------------- | ---------------------------------- |
-| _blured triangle(speed = 0.13)_                 | _blured monkey(speed = 0.2)_               |
+| ------------------------------------ | ------------------------------------------ |
+| _blured triangle(speed = 0.13)_      | _blured monkey(speed = 0.2)_               |
 
 For visual debug a line segment can be drawn whose direction represents the motion direction and the motion speed is reflected in the length of the segment(relative value).
 | ![BVH](./report/trianglespeed0.13.png) | ![SAH](./report/motion2.png) |
 | --------------------------------------------- | --------------------------------------- |
-| _triangle motion_               | _monkey motion_            |
-
+| _triangle motion_ | _monkey motion_ |
 
 ### Bloom filter
 
 **Implementation**
 
-Bloom filtering is done on the final rendered image in the ``renderRayTracing`` method in the ``render.cpp`` file.
-Following the model from the lecture, only pixels with color above a certain threshold are taken for filtering 
-(take a grayscale value which is represented by the highest term in RGB form: ``max(red, green, blue)``). Then, a filter 
-is applied over these pixels. Instead of box filter (average of 9 pixels), as in the lecture, 2-pass gaussian filter is 
-used. This method provides a better blur because of usage of weights following a gaussian distribution, as opposed to 
-all pixels having the same weight (1/9) as in the box filter. 2-pass gaussian blur is better than normal gaussian blur 
+Bloom filtering is done on the final rendered image in the `renderRayTracing` method in the `render.cpp` file.
+Following the model from the lecture, only pixels with color above a certain threshold are taken for filtering
+(take a grayscale value which is represented by the highest term in RGB form: `max(red, green, blue)`). Then, a filter
+is applied over these pixels. Instead of box filter (average of 9 pixels), as in the lecture, 2-pass gaussian filter is
+used. This method provides a better blur because of usage of weights following a gaussian distribution, as opposed to
+all pixels having the same weight (1/9) as in the box filter. 2-pass gaussian blur is better than normal gaussian blur
 in terms of performance. In the end, the original image pixel is added to the filtered pixel to obtain the bloom effect.
 
-When enabling bloom filter in the OpenGL menu, there are 2 extra parameters which can be specified: ``threshold`` and 
-``intensity``. Both have Slider GUIs ranging from 0 to 1. ``Threshold`` controls how bright pixels should be in order to be
+When enabling bloom filter in the OpenGL menu, there are 2 extra parameters which can be specified: `threshold` and
+`intensity`. Both have Slider GUIs ranging from 0 to 1. `Threshold` controls how bright pixels should be in order to be
 taken into account by the filter: high threshold means less pixels taken into account, lower threshold means more pixels.
-``Intensity`` controls how strong the light emission is on the filter: high intensity, stronger light emission.
+`Intensity` controls how strong the light emission is on the filter: high intensity, stronger light emission.
 
 Here are the sources which helped in implementing this feature:
+
 - [Learn OpenGL Bloom](https://learnopengl.com/Advanced-Lighting/Bloom)
 - [Catlike coding - unity - bloom](https://catlikecoding.com/unity/tutorials/advanced-rendering/bloom/)
 - [3D Game Shaders For Beginners](https://lettier.github.io/3d-game-shaders-for-beginners/bloom.html)
 - [Shadertoy](https://www.shadertoy.com/view/lsXGWn)
 - [Wikipedia Box blur](https://en.wikipedia.org/wiki/Box_blur), while gaussian blur was used instead of box blur, this
-source helped in the implementation.
+  source helped in the implementation.
 
 **Examples**
 
 Cornell Box examples
 
 | ![0 intensity](./report/bloom_4_none.bmp) | ![1 intensity](./report/bloom_5_full.bmp) |
-|-------------------------------------------|-------------------------------------------|
+| ----------------------------------------- | ----------------------------------------- |
 | _Bloom with 0 intensity_                  | _Bloom with 1 intensity_                  |
 
 | ![low intensity](./report/bloom_1_low.bmp) | ![medium intensity](./report/bloom_2_medium.bmp) | ![high intensity](./report/bloom_3_high.bmp) |
-|--------------------------------------------|--------------------------------------------------|----------------------------------------------|
+| ------------------------------------------ | ------------------------------------------------ | -------------------------------------------- |
 | _Low intensity_                            | _Medium intensity_                               | _High intensity_                             |
 
 Dragon examples
 
-
 | ![low threshold, low intensity](./report/dragonbloom1.bmp)  | ![low threshold, high intensity](./report/dragonbloom4.bmp)  |
-|-------------------------------------------------------------|--------------------------------------------------------------|
+| ----------------------------------------------------------- | ------------------------------------------------------------ |
 | _Low threshold, low intensity_                              | _Low threshold, high intensity_                              |
 | ![high threshold, low intensity](./report/dragonbloom2.bmp) | ![high threshold, high intensity](./report/dragonbloom3.bmp) |
 | _High threshold, low intensity_                             | _High threshold, high intensity_                             |
-
 
 ### Bilinear interpolation
 
@@ -362,9 +355,9 @@ illum 1
 
 **Visual Debug**
 
-| ![Gloss - visual debug](./report/glossdebug.png) |
-| ------------------------------------------------ |
-| _All samples are visualised_                     |
+| ![Transparency - visual debug](./report/transdebug.png) | ![Transparency shadows - visual debug](./report/transshadowdebug.png) |
+| ------------------------------------------------------- | --------------------------------------------------------------------- |
+| _Debug rays pass through_                               | _Shadow rays also pass thhrough_                                      |
 
 ### Depth of field
 
@@ -408,4 +401,4 @@ Focal length, aperture size and number of samples are user-controlled with slide
 | BVH levels            | 4           | 7        | 10        |
 | Max tris p/ leaf node | 8           | 8        | 86        |
 
-_*all the tests is measured within one execution, in the release mode, with all inrelavant feactures off._
+_\*all the tests is measured within one execution, in the release mode, with all inrelavant feactures off._
