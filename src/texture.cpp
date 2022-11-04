@@ -11,7 +11,9 @@ glm::vec3 acquireTexel(const Image& image, const glm::vec2& texCoord, const Feat
     // The pixel are stored in a 1D array of row major order
     // you can convert from position (i,j) to an index using the method seen in the lecture
     // Note, the center of the first pixel is at image coordinates (0.5, 0.5)
-    return image.pixels[0];
+    
+    glm::vec2 scaledTexCoord = { std::round(texCoord.x * image.width-0.5), std::round(texCoord.y * image.height-0.5) };
+    return image.pixels[scaledTexCoord.x + (image.width * (image.height - scaledTexCoord.y-1))];
 }
 glm::vec3 acquireTexelEnvironment(const Image& image, const glm::vec3& direction, const Features& features)
 {
@@ -31,8 +33,8 @@ glm::vec3 acquireTexelEnvironment(const Image& image, const glm::vec3& direction
         u = 1;
     else
         u = std::asin(direction.z) / std::numbers::pi + 0.5;
-    int j = floor(u * (image.width - 1) + 0.5);
-    int i = image.height - floor(v * (image.height - 1) + 0.5) - 1;
+    int j = round(u * image.width - 0.5);
+    int i = image.height - round(v * image.height - 0.5) - 1;
     /*
     if (i < 0 || i >= image.height || j < 0 || j >= image.width)
         std::cout << u << " " << v << " " << i << " " << j << " " << image.width << " " << image.height
