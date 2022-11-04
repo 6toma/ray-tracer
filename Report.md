@@ -226,11 +226,11 @@ The splitting plane can be drawn with AABBs, indicating where the node gets spli
 
 ### Motion blur
 
-The motion direction and motion speed can be configured via the GUI, the motion direction is considered as the same with its normalized value, and the motion speed is a relative value without physical meaning. During rendering, every ray's origin will have a offset within `(0, motionspeed•motion direction)`, for each ray, we take `numberofsample=200` offsets and the mean of the color those ray hits donates the final color of the pixel. 
+The motion direction and motion speed can be configured via the GUI, the motion direction is considered as the same with its normalized value, and the motion speed is a relative value without physical meaning. During rendering, `glm::vec3 motionBlur(const Scene& scene, const BvhInterface& bvh, const Ray& cameraRay, const Features& features)` is called, in which every ray's origin will have a offset within `(0, motionspeed•motion direction)`. for each ray, we sample the offsets in the range mentioned above, and the number of samples can be configured by GUI. The mean of the color those ray hits donates the final color of the pixel. 
 
 | ![triangle blur](./report/blur0.bmp) | ![monkey blur](./report/motion2render.bmp) |
 | --------------------------------------- | ---------------------------------- |
-| _blured triangle(speed = 0.13) _                 | _blured monkey(speed = 0.2)_               |
+| _blured triangle(speed = 0.13)_                 | _blured monkey(speed = 0.2)_               |
 
 For visual debug a line segment can be drawn whose direction represents the motion direction and the motion speed is reflected in the length of the segment(relative value).
 | ![BVH](./report/trianglespeed0.13.png) | ![SAH](./report/motion2.png) |
@@ -400,12 +400,12 @@ Focal length, aperture size and number of samples are user-controlled with slide
 
 |                       | Cornell Box | Monkey   | Dragon    |
 | --------------------- | ----------- | -------- | --------- |
-| Num triangles         | 32          | 968      | 87K       |
+| Num triangles         | 32          | 967      | 87130     |
 | Time to create (BVH)  | 0.0571ms    | 1.8861ms | 219.089ms |
-| Time to render (BVH)  | 7.98061s    | 9.55794s | 13.3239s  |
-| Time to create (SAH)  | 0.1391ms    | 5.7154ms | 885.793ms |
-| Time to render (SAH)  | 2.22238s    | 3.58297s | 10.8125s  |
-| BVH levels            | 5           | 10       | 10        |
-| Max tris p/ leaf node | 1           | 1        | 86        |
+| Time to render (BVH)  | 0.45324s    | 5.8615s  | 14,422s   |
+| Time to create (SAH)  | 0.9478ms    | 5.7154ms | 885.793ms |
+| Time to render (SAH)  | 0.259522s   | 3.32616s | 10.5918s  |
+| BVH levels            | 4           | 7        | 10        |
+| Max tris p/ leaf node | 8           | 8        | 86        |
 
-_*all the tests is measured within one execution, in the release mode_
+_*all the tests is measured within one execution, in the release mode, with all inrelavant feactures off._

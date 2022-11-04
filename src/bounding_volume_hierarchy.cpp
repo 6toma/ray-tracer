@@ -100,7 +100,7 @@ int treeConstruction(
     node.isleaf = false;
     t.push_back(node);
     int res = t.size() - 1;
-    if (traingleIndex.size() == 1) {
+    if (traingleIndex.size() <=10) {
         t[res].isleaf = true;
         for (auto traingle : traingleIndex) {
             for (int i = 0; i < 4; i++)
@@ -355,7 +355,7 @@ bool BoundingVolumeHierarchy::intersect(Ray& ray, HitInfo& hitInfo, const Featur
                 }
             }
         }
-        drawTriangle(t1, t2, t3);
+        if(hit)drawTriangle(t1, t2, t3);
         return hit;
     }
 }

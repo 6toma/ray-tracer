@@ -296,13 +296,12 @@ glm::vec3 motionBlur(const Scene& scene, const BvhInterface& bvh, const Ray& cam
 {
     if (!features.extra.enableMotionBlur)
         return getFinalColor(scene, bvh, cameraRay, features);
-
     glm::vec3 pixelColor(0);
     Ray motionRay = cameraRay;
-    motionRay.origin -= features.extra.motionDirection * features.extra.motionSpeed / 2.f;
-    for (int i = 0; i < features.extra.motionSamples; i++) {
+    glm::vec3 dir = glm::normalize(features.extra.motionDirection);
+    for (int i = 0; i <= features.extra.motionSamples; i++) {
         motionRay.origin
-            += features.extra.motionDirection * features.extra.motionSpeed / glm::vec3(features.extra.motionSamples);
+            -= dir * features.extra.motionSpeed / glm::vec3(features.extra.motionSamples);
         pixelColor += getFinalColor(scene, bvh, motionRay, features);
     }
 
