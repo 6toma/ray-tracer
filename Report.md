@@ -24,20 +24,20 @@ the type of light (point/segment/parallelogram). The resulting color is the aver
 **Examples**
 
 | ![Shading disabled](./report/Monkey_no_shading.bmp) | ![Shading enabled](./report/Monkey_shading.bmp) |
-| --------------------------------------------------- | ----------------------------------------------- |
-| _Monkey without shading_                            | _Monkey with shading_                           |
+| :-------------------------------------------------: | :---------------------------------------------: |
+|              _Monkey without shading_               |              _Monkey with shading_              |
 
 | ![Shading disabled](./report/Teapot_no_shading.bmp) | ![](./report/Teapot_shading.bmp) |
-| --------------------------------------------------- | -------------------------------- |
-| _Teapot without shading_                            | _Teapot with shading_            |
+| :-------------------------------------------------: | :------------------------------: |
+|              _Teapot without shading_               |      _Teapot with shading_       |
 
 **Visual Debug**
 
 The ray takes the calculated shading color of the object that it hits.
 
 | ![Cast gray ray](./report/shading_visual_debug_1.png) | ![Cast red ray](./report/shading_visual_debug_2.png) | ![Cast green ray](./report/shading_visual_debug_3.png) |
-| ----------------------------------------------------- | ---------------------------------------------------- | ------------------------------------------------------ |
-| _Gray ray in Cornell box_                             | _Red ray in Cornell box_                             | _Green ray in Cornell box_                             |
+| :---------------------------------------------------: | :--------------------------------------------------: | :----------------------------------------------------: |
+|               _Gray ray in Cornell box_               |               _Red ray in Cornell box_               |               _Green ray in Cornell box_               |
 
 ### Recursive ray-tracer
 
@@ -51,8 +51,8 @@ where `Lo` is the final color, we can see the reflections from the mirror object
 **Examples**
 
 | ![Recursion disabled](./report/shading_no_recursion.bmp) | ![Recursion enabled](./report/shading_with_recursion.bmp) |
-| -------------------------------------------------------- | --------------------------------------------------------- |
-| _Cornell box with shading_ and no _recursion_            | _Cornell box with shading_ and _recursion_                |
+| :------------------------------------------------------: | :-------------------------------------------------------: |
+|      _Cornell box with shading_ and no _recursion_       |        _Cornell box with shading_ and _recursion_         |
 
 **Visual Debug**
 
@@ -60,8 +60,8 @@ Similar to shading's visual debug, the ray takes the final colour of the object 
 potential reflections off surfaces.
 
 | ![Gray reflection](./report/recursive_visual_debug_gray.png) | ![Red reflection](./report/recursive_visual_debug_red.png) | ![Miss](./report/recursive_visual_debug_miss.png) |
-| ------------------------------------------------------------ | ---------------------------------------------------------- | ------------------------------------------------- |
-| _Gray reflection off wall_                                   | _Red reflection off wall_                                  | _No hit, black reflection_                        |
+| :----------------------------------------------------------: | :--------------------------------------------------------: | :-----------------------------------------------: |
+|                  _Gray reflection off wall_                  |                 _Red reflection off wall_                  |            _No hit, black reflection_             |
 
 ### Hard shadows
 
@@ -74,13 +74,13 @@ of all lights that reach the sampled point.
 **Examples**
 
 | ![Hard shadows - single light](./report/hard.bmp) | ![Hard shadows - two colored lights](./report/hardcolors.bmp) |
-| ------------------------------------------------- | ------------------------------------------------------------- |
-| _Single white light_                              | _Two colored lights_                                          |
+| :-----------------------------------------------: | :----------------------------------------------------------: |
+|               _Single white light_                |                     _Two colored lights_                     |
 
 **Visual Debug**
 
-| ![Hard shadows - visual debug](./report/harddebug.png)                  |
-| ----------------------------------------------------------------------- |
+|    ![Hard shadows - visual debug](./report/harddebug.png)    |
+| :----------------------------------------------------------: |
 | _The color of the ray indicates transparency of the intersected meshes_ |
 
 ### Area lights
@@ -94,13 +94,13 @@ and averaged together.
 **Examples**
 
 | ![Segment light](./report/segment.bmp) | ![Area light](./report/area.bmp) |
-| -------------------------------------- | -------------------------------- |
-| _Segment light_                        | _Area light_                     |
+| :------------------------------------: | :------------------------------: |
+|            _Segment light_             |           _Area light_           |
 
 **Visual Debug**
 
-| ![Soft shadows - visual debug](./report/softdebug.png)                          |
-| ------------------------------------------------------------------------------- |
+|    ![Soft shadows - visual debug](./report/softdebug.png)    |
+| :----------------------------------------------------------: |
 | _All samples are visualised; the color of the ray again indicates transparency_ |
 
 ### BVH generation
@@ -139,8 +139,8 @@ The render times decrease proportionally to the number of triangles/primitives. 
 better BVH performance!
 
 | ![Dragon render times](./report/bvh_traversal_render_times_dragon.png) | ![Teapot render times](./report/bvh_traversal_render_times_teapot.png) |
-| ---------------------------------------------------------------------- | ---------------------------------------------------------------------- |
-| _Dragon render times - from 5 minutes to 7 seconds!_                   | _Teapot render times_                                                  |
+| :----------------------------------------------------------: | :----------------------------------------------------------: |
+|     _Dragon render times - from 5 minutes to 7 seconds!_     |                    _Teapot render times_                     |
 
 **Visual Debug**
 
@@ -152,10 +152,10 @@ checking a box (the "Draw intersected but not visited nodes with a different col
 the menu in OpenGL. This feature is best seen in examples 2 and 4.
 
 | ![ex 1](./report/bvh_traversal_visual_debug_1.png) | ![ex 2](./report/bvh_traversal_visual_debug_2.png) |
-| -------------------------------------------------- | -------------------------------------------------- |
-| _Example 1 - left ear hit_                         | _Example 2 - right side of head hit_               |
+| :------------------------------------------------: | :------------------------------------------------: |
+|             _Example 1 - left ear hit_             |        _Example 2 - right side of head hit_        |
 | ![ex 3](./report/bvh_traversal_visual_debug_3.png) | ![ex 4](./report/bvh_traversal_visual_debug_4.png) |
-| _Example 3 - no primitive hit_                     | _Example 4 - drawn primitive_                      |
+|           _Example 3 - no primitive hit_           |           _Example 4 - drawn primitive_            |
 
 ### Normal interpolation
 
@@ -166,8 +166,8 @@ Normal is calculated using barycentric coordinates obtained in intersection and 
 **Examples**
 
 | ![Monkey - no interpolation](./report/nointerp.bmp) | ![Monkey - interpolation](./report/interp.bmp) |
-| --------------------------------------------------- | ---------------------------------------------- |
-| _Without interpolation_                             | _With interpolation_                           |
+| :-------------------------------------------------: | :--------------------------------------------: |
+|               _Without interpolation_               |              _With interpolation_              |
 
 **Visual Debug**
 
@@ -175,11 +175,15 @@ There are two (not mutually exclusive options):
 
 1. Draw normals at vertices and intermediate points:
    | ![Mesh normals - vertices](./report/meshnormals.png) | ![Mesh normals - intermediate](./report/meshnormalsinter.png) |
-   | ---------------------------------------------------- | ------------------------------------------------------------- |
-   | _Only vertices_ | _Vertices and points in between_ |
+   | :--------------------------------------------------: | :----------------------------------------------------------: |
+   |                   _Only vertices_                    |               _Vertices and points in between_               |
 
 2. Draw normals at intersection points with debug rays
-   ![Intersection point normals](./report/hitnormals.png)
+
+![Intersection point normals](./report/hitnormals.png)
+
+
+
 
 ### Texture
 
@@ -187,7 +191,7 @@ After the intersection point is generated, it's texture coordinates is calculate
 
 the debug ray will get color of the texture if texture mapping is enabled, we can also debug by checking the textured cube in ray-traced mode.
 | ![front 3](./report/texture_front.bmp) | ![back 3](./report/texture_back.bmp) |
-| --------------------------------------- | ---------------------------------- |
+| :-------------------------------------: | :--------------------------------: |
 | _front 3 sufaces_ | _back 3 surface_ |
 
 ---
@@ -200,13 +204,13 @@ Method `glm::vec3 acquireTexelEnvironment(const Image& image, const glm::vec3& d
 
 This method is called when the ray has no hit so it can create a background looking.
 | ![without reflection](./report/monkey_in_lake.bmp) | ![with reflection](./report/cornell_box_in_lake.bmp) |
-| --------------------------------------- | ---------------------------------- |
-| _Without reflection_ | _With reflection_ |
+| :------------------------------------------------: | :--------------------------------------------------: |
+|                _Without reflection_                |                  _With reflection_                   |
 
 The debug ray is used for the visual debug, if it has no hit with the environmental mapping open, the ray supposed to have the color of the environmental texture. or it's red as default.
 | ![no mapping](./report/env_debug_without.png) | ![with mapping](./report/env_debug.png) |
-| --------------------------------------------- | --------------------------------------- |
-| _Without environmental mapping_ | _With environmental mapping_ |
+| :-------------------------------------------: | :-------------------------------------: |
+|        _Without environmental mapping_        |      _With environmental mapping_       |
 
 ### SAH+binning
 
@@ -216,20 +220,20 @@ Now the splitting axis and boundary triangle are chosen base on the surface area
 
 The splitting plane can be drawn with AABBs, indicating where the node gets splited, for BVH all the planes towards the same direction and always near the middle of the AABB, but for SAH splitting planes vary a lot.
 | ![BVH](./report/split_plane_without.png) | ![SAH](./report/split_plane_level5.png) |
-| --------------------------------------------- | --------------------------------------- |
-| _BVH splitting criteria_ | _SAH splitting criteria_ |
+| :--------------------------------------: | :-------------------------------------: |
+|         _BVH splitting criteria_         |        _SAH splitting criteria_         |
 
 ### Motion blur
 
 The motion direction and motion speed can be configured via the GUI, the motion direction is considered as the same with its normalized value, and the motion speed is a relative value without physical meaning. During rendering, `glm::vec3 motionBlur(const Scene& scene, const BvhInterface& bvh, const Ray& cameraRay, const Features& features)` is called, in which every ray's origin will have a offset within `(0, motionspeed•motion direction)`. for each ray, we sample the offsets in the range mentioned above, and the number of samples can be configured by GUI. The mean of the color those ray hits donates the final color of the pixel.
 
 | ![triangle blur](./report/blur0.bmp) | ![monkey blur](./report/motion2render.bmp) |
-| ------------------------------------ | ------------------------------------------ |
-| _blured triangle(speed = 0.13)_      | _blured monkey(speed = 0.2)_               |
+| :----------------------------------: | :----------------------------------------: |
+|   _blured triangle(speed = 0.13)_    |        _blured monkey(speed = 0.2)_        |
 
 For visual debug a line segment can be drawn whose direction represents the motion direction and the motion speed is reflected in the length of the segment(relative value).
 | ![BVH](./report/trianglespeed0.13.png) | ![SAH](./report/motion2.png) |
-| --------------------------------------------- | --------------------------------------- |
+| :-------------------------------------------: | :-------------------------------------: |
 | _triangle motion_ | _monkey motion_ |
 
 ### Bloom filter
@@ -263,24 +267,20 @@ Here are the sources which helped in implementing this feature:
 Cornell Box examples
 
 | ![0 intensity](./report/bloom_4_none.bmp) | ![1 intensity](./report/bloom_5_full.bmp) |
-| ----------------------------------------- | ----------------------------------------- |
-| _Bloom with 0 intensity_                  | _Bloom with 1 intensity_                  |
+| :---------------------------------------: | :---------------------------------------: |
+|         _Bloom with 0 intensity_          |         _Bloom with 1 intensity_          |
 
 | ![low intensity](./report/bloom_1_low.bmp) | ![medium intensity](./report/bloom_2_medium.bmp) | ![high intensity](./report/bloom_3_high.bmp) |
-| ------------------------------------------ | ------------------------------------------------ | -------------------------------------------- |
-| _Low intensity_                            | _Medium intensity_                               | _High intensity_                             |
+| :----------------------------------------: | :----------------------------------------------: | :------------------------------------------: |
+|              _Low intensity_               |                _Medium intensity_                |               _High intensity_               |
 
 Dragon examples
 
 | ![low threshold, low intensity](./report/dragonbloom1.bmp)  | ![low threshold, high intensity](./report/dragonbloom4.bmp)  |
-| ----------------------------------------------------------- | ------------------------------------------------------------ |
-| _Low threshold, low intensity_                              | _Low threshold, high intensity_                              |
+| :---------------------------------------------------------: | :----------------------------------------------------------: |
+|               _Low threshold, low intensity_                |               _Low threshold, high intensity_                |
 | ![high threshold, low intensity](./report/dragonbloom2.bmp) | ![high threshold, high intensity](./report/dragonbloom3.bmp) |
-| _High threshold, low intensity_                             | _High threshold, high intensity_                             |
-
-### Bilinear interpolation
-
-### Mipmapping
+|               _High threshold, low intensity_               |               _High threshold, high intensity_               |
 
 ### Irregular sampling
 
@@ -290,15 +290,15 @@ Instead of taking one sample per pixel, a jittered grid of samples is taken, whi
 
 **Example**
 
-| ![Without AA](./report/noaa.bmp)                   | ![AA example](./report/aa.bmp)                 |
-| -------------------------------------------------- | ---------------------------------------------- |
+|          ![Without AA](./report/noaa.bmp)          |         ![AA example](./report/aa.bmp)         |
+| :------------------------------------------------: | :--------------------------------------------: |
 | _Notice the jagged edges without irreguar samping_ | _With irreguar sampling, the edges are smooth_ |
 
 **Visual Debug**
 
 | ![AA - visual debug](./report/aadebug.png) |
-| ------------------------------------------ |
-| _All samples are visualised_               |
+| :----------------------------------------: |
+|        _All samples are visualised_        |
 
 ### Glossy reflections
 
@@ -316,8 +316,8 @@ to determine the final result.
 **Visual Debug**
 
 | ![Gloss - visual debug](./report/glossdebug.png) |
-| ------------------------------------------------ |
-| _All samples are visualised_                     |
+| :----------------------------------------------: |
+|           _All samples are visualised_           |
 
 ### Transparency
 
@@ -350,14 +350,14 @@ illum 1
 ```
 
 | ![Transparency - point light](./report/trans.bmp) | ![Transparency - area light](./report/transarea.bmp) | ![Translucency](./report/translucent.bmp) |
-| ------------------------------------------------- | ---------------------------------------------------- | ----------------------------------------- |
-| _Transparency with point light_                   | _Transparency with area light_                       | _Translucency_                            |
+| :-----------------------------------------------: | :--------------------------------------------------: | :---------------------------------------: |
+|          _Transparency with point light_          |            _Transparency with area light_            |              _Translucency_               |
 
 **Visual Debug**
 
 | ![Transparency - visual debug](./report/transdebug.png) | ![Transparency shadows - visual debug](./report/transshadowdebug.png) |
-| ------------------------------------------------------- | --------------------------------------------------------------------- |
-| _Debug rays pass through_                               | _Shadow rays also pass thhrough_                                      |
+| :-----------------------------------------------------: | :----------------------------------------------------------: |
+|                _Debug rays pass through_                |               _Shadow rays also pass thhrough_               |
 
 ### Depth of field
 
@@ -373,21 +373,15 @@ Focal length, aperture size and number of samples are user-controlled with slide
 
 **Example**
 
-| ![Depth of field](./report/dof.bmp)   |
-| ------------------------------------- |
+|  ![Depth of field](./report/dof.bmp)  |
+| :-----------------------------------: |
 | _Focal length 2.5, aperture size 0.1_ |
 
 **Visual Debug**
 
 | ![DOF - visual debug](./report/dofdebugpov.png) | ![DOF - visual debug](./report/dofdebug.png) |
-| ----------------------------------------------- | -------------------------------------------- |
-| _All samples are visualised_                    | _Aperture is also shown_                     |
-
----
-
-## Models
-
----
+| :---------------------------------------------: | :------------------------------------------: |
+|          _All samples are visualised_           |           _Aperture is also shown_           |
 
 ## Performance test
 
