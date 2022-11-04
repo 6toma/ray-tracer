@@ -63,6 +63,7 @@ int main(int argc, char** argv)
 
         SceneType sceneType { SceneType::SingleTriangle };
         std::optional<Ray> optDebugRay;
+        std::vector<Ray> rays;
         Plane focalPlane;
         glm::mat2x3 apertureBasis;
         Scene scene = loadScenePrebuilt(sceneType, config.dataPath);
@@ -84,8 +85,29 @@ int main(int argc, char** argv)
                 switch (key) {
                 case GLFW_KEY_R: {
                     // Shoot a ray. Produce a ray from camera to the far plane.
-                    const auto tmp = window.getNormalizedCursorPos();
-                    optDebugRay = camera.generateRay(tmp * 2.0f - 1.0f);
+                    glm::vec2 res(screen.resolution());
+                    const auto tmp = window.getCursorPos();
+                    optDebugRay = camera.generateRay(tmp / glm::vec2(res) * 2.0f - 1.0f);
+
+                    rays.clear();
+                    if (config.features.extra.enableMultipleRaysPerPixel) {
+                        for (int i = 0; i < config.features.extra.AASamples; i++) {
+                            for (int j = 0; j < config.features.extra.AASamples; j++) {
+                                float subX = tmp.x
+                                    + ((float)i + (float)rand() / (float)RAND_MAX)
+                                        / (float)config.features.extra.AASamples;
+                                float subY = tmp.y
+                                    + ((float)j + (float)rand() / (float)RAND_MAX)
+                                        / (float)config.features.extra.AASamples;
+                                const glm::vec2 normalizedPixelPos {
+                                    subX / float(res.x) * 2.0f - 1.0f,
+                                    subY / float(res.y) * 2.0f - 1.0f,
+                                };
+
+                                rays.push_back(camera.generateRay(normalizedPixelPos));
+                            }
+                        }
+                    }
 
                     focalPlane = {
                         glm::dot(
@@ -194,6 +216,14 @@ int main(int argc, char** argv)
                     "Texture filtering(bilinear interpolation)", &config.features.extra.enableBilinearTextureFiltering
                 );
                 ImGui::Checkbox("Texture filtering(mipmapping)", &config.features.extra.enableMipmapTextureFiltering);
+
+                ImGui::Checkbox("Antialiasing", &config.features.extra.enableMultipleRaysPerPixel);
+                if (config.features.extra.enableMultipleRaysPerPixel)
+                    ImGui::SliderInt(
+                        "Antialiasing samples", &config.features.extra.AASamples, 3, 50, "%d",
+                        ImGuiSliderFlags_Logarithmic
+                    );
+
                 ImGui::Checkbox("Glossy reflections", &config.features.extra.enableGlossyReflection);
                 if (config.features.extra.enableGlossyReflection)
                     ImGui::SliderInt(
@@ -222,6 +252,10 @@ int main(int argc, char** argv)
                 }
                 ImGui::Checkbox("Motion Blur", &config.features.extra.enableMotionBlur);
                 if (config.features.extra.enableMotionBlur) {
+                    ImGui::SliderInt(
+                        "Motion blur samples", &config.features.extra.motionSamples, 10, 1000, "%d",
+                        ImGuiSliderFlags_Logarithmic
+                    );
                     ImGui::DragFloat3(
                         "Moving Direction", glm::value_ptr(config.features.extra.motionDirection), 0.05f, -1.0f, 1.0f
                     );
@@ -462,10 +496,12 @@ int main(int argc, char** argv)
                     glDisable(GL_LIGHTING);
                     glDepthFunc(GL_LEQUAL);
 
-                    if (config.features.extra.enableDepthOfField)
+                    if (config.features.extra.enableMultipleRaysPerPixel) {
+                        for (const Ray& r : rays) {
+                            drawDOF(scene, bvh, focalPlane, r, config.features, apertureBasis);
+                        }
+                    } else
                         drawDOF(scene, bvh, focalPlane, *optDebugRay, config.features, apertureBasis);
-                    else
-                        getFinalColor(scene, bvh, *optDebugRay, config.features);
                     enableDebugDraw = false;
                 }
                 if (debugNormals) {

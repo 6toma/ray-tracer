@@ -1,6 +1,8 @@
 #include "draw.h"
 #include "interpolate.h"
 #include <framework/opengl_includes.h>
+#include <framework/trackball.h>
+#include "screen.h"
 // Suppress warnings in third-party code.
 #include <framework/disable_all_warnings.h>
 DISABLE_WARNINGS_PUSH()
@@ -380,6 +382,38 @@ void drawNormals(const Scene& scene, int interpolationLevel)
     }
 }
 
+void drawAA(
+    const Scene& scene, const BvhInterface& bvh, const Plane& focalPlane, const glm::vec2& pixel,
+    const Trackball& camera, const Screen& screen,
+    const Features& features, const glm::mat2x3& apertureBasis
+)
+{
+    if (!enableDebugDraw)
+        return;
+
+    if (!features.extra.enableMultipleRaysPerPixel) {
+        Ray cameraRay = camera.generateRay(pixel / glm::vec2(screen.resolution()) * 2.0f - 1.0f);
+        drawDOF(scene, bvh, focalPlane, cameraRay, features, apertureBasis);
+        return;
+    }
+
+    glm::ivec2 windowResolution = screen.resolution();
+
+    for (int i = 0; i < features.extra.AASamples; i++) {
+        for (int j = 0; j < features.extra.AASamples; j++) {
+            float subX = pixel.x + ((float)i + (float)rand() / (float)RAND_MAX) / (float)features.extra.AASamples;
+            float subY = pixel.y + ((float)j + (float)rand() / (float)RAND_MAX) / (float)features.extra.AASamples;
+            const glm::vec2 normalizedPixelPos {
+                subX / float(windowResolution.x) * 2.0f - 1.0f,
+                subY / float(windowResolution.y) * 2.0f - 1.0f,
+            };
+            Ray cameraRay = camera.generateRay(normalizedPixelPos);
+
+            drawDOF(scene, bvh, focalPlane, cameraRay, features, apertureBasis);
+        }
+    }
+}
+
 void drawDOF(
     const Scene& scene, const BvhInterface& bvh, const Plane& focalPlane, const Ray& cameraRay,
     const Features& features, const glm::mat2x3& apertureBasis
@@ -387,6 +421,12 @@ void drawDOF(
 {
     if (!enableDebugDraw)
         return;
+
+    if (!features.extra.enableDepthOfField) {
+        getFinalColor(scene, bvh, cameraRay, features);
+        return;
+    }
+    
 
     uint64_t rand_state[4] { 4550963226, 4884, 2, 724 };
     glm::vec3 point = cameraRay.origin;

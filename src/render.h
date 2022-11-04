@@ -15,10 +15,10 @@ struct Features;
 
 // Main rendering function.
 void renderRayTracing(const Scene& scene, const Trackball& camera, const BvhInterface& bvh, Screen& screen, const Features& features);
-    // Get the color of a ray.
+// Get the color of a ray.
 glm::vec3 getFinalColor(const Scene& scene, const BvhInterface& bvh, Ray ray, const Features& features, int rayDepth = 0);
 
-glm::vec3 DOFColor(
+glm::vec3 DOF(
     const Scene& scene, const BvhInterface& bvh, const Plane& focalPlane, const Ray& cameraRay,
-    const Features& features, const glm::mat2x3& apertureBasis
-);
+    const Features& features, const glm::mat2x3& apertureBasis);
+glm::vec3 motionBlur(const Scene& scene, const BvhInterface& bvh, const Ray& cameraRay, const Features& features);
