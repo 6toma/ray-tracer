@@ -1,9 +1,11 @@
 # CG Final Project Report
 
-Kazek Ciaś 5467640
-Renyi Yang 5470668
-Toma Volentir 5454123
-Group number: 62
+- Kazek Ciaś 5467640
+- Renyi Yang 5470668
+- Toma Volentir 5454123
+- Group number: 62
+
+We do not use the prebuilt intersection library
 
 ---
 
